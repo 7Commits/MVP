@@ -1,2 +1,2 @@
 # MVP
-Repository per il MVP della fase PB 
+Repository per il Minimum Viable Product della fase PB 
