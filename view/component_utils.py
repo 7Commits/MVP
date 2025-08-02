@@ -174,4 +174,3 @@ def create_metrics_container(metrics_data: list[dict]):
 
     metrics_html += '</div>'
     st.markdown(metrics_html, unsafe_allow_html=True)
-

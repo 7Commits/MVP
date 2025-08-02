@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import select
 
-from models.db_utils import get_engine
+from models.db_utils import get_session
+from models.orm_models import APIPresetORM
+
 
 @dataclass
 class APIPreset:
@@ -18,30 +19,61 @@ class APIPreset:
 
     @staticmethod
     def load_all() -> pd.DataFrame:
-        df = pd.read_sql("SELECT * FROM api_presets", get_engine())
-        df['id'] = df['id'].astype(str)
-        return df
+        with get_session() as session:
+            presets = session.execute(select(APIPresetORM)).scalars().all()
+            data = [
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "provider_name": p.provider_name,
+                    "endpoint": p.endpoint,
+                    "api_key": p.api_key,
+                    "model": p.model,
+                    "temperature": p.temperature,
+                    "max_tokens": p.max_tokens,
+                }
+                for p in presets
+            ]
+        columns = [
+            "id",
+            "name",
+            "provider_name",
+            "endpoint",
+            "api_key",
+            "model",
+            "temperature",
+            "max_tokens",
+        ]
+        return pd.DataFrame(data, columns=columns)
 
     @staticmethod
     def save_df(df: pd.DataFrame) -> None:
-        engine = get_engine()
-        with engine.begin() as conn:
-            existing_ids = pd.read_sql('SELECT id FROM api_presets', conn)['id'].astype(str).tolist()
+        with get_session() as session:
+            existing_ids = session.execute(select(APIPresetORM.id)).scalars().all()
             incoming_ids = df['id'].astype(str).tolist()
             for del_id in set(existing_ids) - set(incoming_ids):
-                conn.execute(text('DELETE FROM api_presets WHERE id=:id'), {'id': del_id})
+                obj = session.get(APIPresetORM, del_id)
+                if obj:
+                    session.delete(obj)
             for _, row in df.iterrows():
-                # Convert NaN values from Pandas to None so that SQLAlchemy can
-                # correctly insert NULLs into the database instead of the string
-                # "nan" which would raise a ProgrammingError with MySQL.
                 params = {k: (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
-                if row['id'] in existing_ids:
-                    conn.execute(text('''UPDATE api_presets SET name=:name, provider_name=:provider_name, endpoint=:endpoint, api_key=:api_key, model=:model, temperature=:temperature, max_tokens=:max_tokens WHERE id=:id'''), params)
+                obj = session.get(APIPresetORM, params['id'])
+                if obj:
+                    obj.name = params['name']
+                    obj.provider_name = params['provider_name']
+                    obj.endpoint = params['endpoint']
+                    obj.api_key = params['api_key']
+                    obj.model = params['model']
+                    obj.temperature = params['temperature']
+                    obj.max_tokens = params['max_tokens']
                 else:
-                    conn.execute(text('''INSERT INTO api_presets (id, name, provider_name, endpoint, api_key, model, temperature, max_tokens) VALUES (:id, :name, :provider_name, :endpoint, :api_key, :model, :temperature, :max_tokens)'''), params)
+                    session.add(APIPresetORM(**params))
+            session.commit()
 
     @staticmethod
     def delete(preset_id: str) -> None:
-        engine = get_engine()
-        with engine.begin() as conn:
-            conn.execute(text('DELETE FROM api_presets WHERE id=:id'), {'id': preset_id})
+        with get_session() as session:
+            obj = session.get(APIPresetORM, preset_id)
+            if obj:
+                session.delete(obj)
+            session.commit()

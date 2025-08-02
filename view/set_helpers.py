@@ -1,31 +1,44 @@
 import streamlit as st
 
-from controllers.question_set_controller import update_set, delete_set, import_sets_from_file
-from controllers.question_controller import load_questions
+from controllers.question_set_controller import (
+    update_set,
+    delete_set,
+    import_sets_from_file,
+    refresh_question_sets,
+)
+from services.question_service import refresh_questions
+from .state_models import SetPageState
 
 
-def save_set_callback(set_id: str, edited_name: str, question_options_checkboxes: dict, newly_selected_questions_ids: list[str]):
+def save_set_callback(
+    set_id: str,
+    edited_name: str,
+    question_options_checkboxes: dict,
+    newly_selected_questions_ids: list[str],
+    state: SetPageState,
+) -> None:
     kept_questions_ids = [q_id for q_id, keep in question_options_checkboxes.items() if keep]
-    updated_questions_ids = list(set(kept_questions_ids + [str(q_id) for q_id in newly_selected_questions_ids]))
+    updated_questions_ids = list(
+        set(kept_questions_ids + [str(q_id) for q_id in newly_selected_questions_ids])
+    )
 
-    if update_set(set_id, edited_name, updated_questions_ids):
-        st.session_state.save_set_success_message = "Set di domande aggiornato con successo!"
-        st.session_state.save_set_success = True
-        st.session_state.trigger_rerun = True
-    else:
-        st.session_state.save_set_error_message = "Impossibile aggiornare il set di domande."
-        st.session_state.save_set_error = True
+    update_set(set_id, edited_name, updated_questions_ids)
+    state.save_set_success_message = "Set di domande aggiornato con successo!"
+    state.save_set_success = True
+    st.session_state.question_sets = refresh_question_sets()
+    state.trigger_rerun = True
 
 
-def delete_set_callback(set_id: str):
+def delete_set_callback(set_id: str, state: SetPageState):
     delete_set(set_id)
-    st.session_state.delete_set_success_message = "Set di domande eliminato con successo!"
-    st.session_state.delete_set_success = True
-    st.session_state.trigger_rerun = True
+    state.delete_set_success_message = "Set di domande eliminato con successo!"
+    state.delete_set_success = True
+    st.session_state.question_sets = refresh_question_sets()
+    state.trigger_rerun = True
 
 
 @st.dialog("Conferma Eliminazione")
-def confirm_delete_set_dialog(set_id: str, set_name: str):
+def confirm_delete_set_dialog(set_id: str, set_name: str, state: SetPageState):
     """Dialog di conferma per l'eliminazione del set di domande"""
     st.write(f"Sei sicuro di voler eliminare il set '{set_name}'?")
     st.warning("Questa azione non può essere annullata.")
@@ -34,7 +47,7 @@ def confirm_delete_set_dialog(set_id: str, set_name: str):
 
     with col1:
         if st.button("Sì, Elimina", type="primary", use_container_width=True):
-            delete_set_callback(set_id)
+            delete_set_callback(set_id, state)
             st.rerun()
 
     with col2:
@@ -42,40 +55,38 @@ def confirm_delete_set_dialog(set_id: str, set_name: str):
             st.rerun()
 
 
-def import_set_callback():
+def import_set_callback(state: SetPageState):
     """Importa uno o più set di domande da file JSON o CSV."""
 
-    st.session_state.import_set_success = False
-    st.session_state.import_set_error = False
-    st.session_state.import_set_success_message = ""
-    st.session_state.import_set_error_message = ""
+    state.import_set_success = False
+    state.import_set_error = False
+    state.import_set_success_message = ""
+    state.import_set_error_message = ""
 
     uploaded_file = st.session_state.get("uploaded_file_content_set")
     result = import_sets_from_file(uploaded_file)
 
     if result["success"]:
-        st.session_state.import_set_success = True
-        st.session_state.import_set_success_message = result["success_message"]
-        if result.get("questions_df") is not None:
-            st.session_state.questions = result["questions_df"]
-        if result.get("sets_df") is not None:
-            st.session_state.question_sets = result["sets_df"]
+        state.import_set_success = True
+        state.import_set_success_message = result["success_message"]
+        st.session_state.questions = refresh_questions()
+        st.session_state.question_sets = refresh_question_sets()
         st.session_state.uploaded_file_content_set = None
     else:
-        st.session_state.import_set_error = True
-        st.session_state.import_set_error_message = result["error_message"]
+        state.import_set_error = True
+        state.import_set_error_message = result["error_message"]
 
     for warn in result.get("warnings", []):
         st.warning(warn)
 
-    st.session_state.trigger_rerun = True
+    state.trigger_rerun = True
 
 
 def get_question_text(question_id: str) -> str:
     """Ritorna il testo della domanda dato il suo ID."""
     if "questions" in st.session_state and not st.session_state.questions.empty:
         if "domanda" not in st.session_state.questions.columns:
-            st.session_state.questions = load_questions()
+            st.session_state.questions = refresh_questions()
             if "domanda" not in st.session_state.questions.columns:
                 return f"ID Domanda: {question_id} (colonna 'domanda' mancante)"
 
@@ -100,20 +111,26 @@ def mark_expander_open(exp_key: str):
         st.session_state.set_expanders[exp_key] = True
 
 
-def create_save_set_callback(set_id: str, exp_key: str):
+def create_save_set_callback(set_id: str, exp_key: str, state: SetPageState):
     def callback():
         mark_expander_open(exp_key)
         edited_name = st.session_state.get(f"set_name_{set_id}", "")
         question_options_checkboxes = st.session_state.question_checkboxes.get(set_id, {})
         newly_selected_questions_ids = st.session_state.newly_selected_questions.get(set_id, [])
 
-        save_set_callback(set_id, edited_name, question_options_checkboxes, newly_selected_questions_ids)
+        save_set_callback(
+            set_id,
+            edited_name,
+            question_options_checkboxes,
+            newly_selected_questions_ids,
+            state,
+        )
 
     return callback
 
 
-def create_delete_set_callback(set_id: str):
+def create_delete_set_callback(set_id: str, state: SetPageState):
     def callback():
-        delete_set_callback(set_id)
+        delete_set_callback(set_id, state)
 
     return callback

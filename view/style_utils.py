@@ -1,3 +1,8 @@
+"""Funzioni di utilità per applicare stili CSS nelle viste Streamlit.
+
+Centralizza l'iniezione di CSS per favorirne il riuso tra le pagine.
+"""
+
 import streamlit as st
 
 
@@ -47,12 +52,28 @@ def add_global_styles():
             border-radius: 8px !important;
             width: 100% !important;
         }
+        .stMultiselect span[data-baseweb="tag"] {
+            max-width: 100%;
+            white-space: normal !important;
+            flex-wrap: wrap;
+            overflow-wrap: anywhere;   /* optional safeguard for long tokens */
+        }
+        .stMultiselect span[data-baseweb="tag"] span {
+            white-space: normal !important;
+            word-break: break-word;
+        }
+        .stMultiselect .st-gz {
+            max-width: none !important;
+        }
         /* Consenti testo a capo all'interno di tutti i menu select */
         div[data-baseweb="select"] * {
-            white-space: normal !important;
+            max-width: 100%;
+            overflow-wrap: anywhere;  
+            word-break: normal; 
         }
         div[data-baseweb="menu"] * {
             white-space: normal !important;
+            word-break: break-word;
         }
 
         /* Stile dei pulsanti */
@@ -79,7 +100,8 @@ def add_global_styles():
             color: #333333 !important;
         }
 
-        .stCheckbox > div[role="radiogroup"] > label > div:first-child, .stRadio > div[role="radiogroup"] > label > div:first-child {
+        .stCheckbox > div[role="radiogroup"] > label > div:first-child,
+        .stRadio > div[role="radiogroup"] > label > div:first-child {
             background-color: white !important;
             border-color: #C0C9F1 !important;
         }
@@ -185,3 +207,166 @@ def add_section_title(title: str, icon: str | None = None):
         unsafe_allow_html=True,
     )
 
+
+def add_home_styles():
+    """Applica gli stili CSS specifici della home page.
+
+    Migliora la visibilità degli input nei temi chiaro e scuro e definisce
+    l'aspetto degli elementi principali come box funzionali e sezioni di
+    benvenuto.
+    """
+    st.markdown(
+        """
+    <style>
+    /* TEMA SCURO: Input con sfondo CHIARO e testo NERO */
+    [data-theme="dark"] div[data-testid="stTextInput"] input,
+    .streamlit-dark div[data-testid="stTextInput"] input,
+    [data-theme="dark"] div[data-baseweb="input"] input,
+    .streamlit-dark div[data-baseweb="input"] input,
+    [data-theme="dark"] div[data-testid="stTextArea"] textarea,
+    .streamlit-dark div[data-testid="stTextArea"] textarea,
+    [data-theme="dark"] div[data-baseweb="textarea"] textarea,
+    .streamlit-dark div[data-baseweb="textarea"] textarea,
+    [data-theme="dark"] div[data-testid="stNumberInput"] input,
+    .streamlit-dark div[data-testid="stNumberInput"] input {
+        color: #000000 !important; /* Testo NERO */
+        background-color: #FFFFFF !important; /* Sfondo BIANCO */
+        border: 1px solid #AAAAAA !important; /* Bordo grigio chiaro */
+    }
+
+    /* TEMA SCURO: Select box con testo NERO su sfondo BIANCO */
+    /* Nota: lo stile dei select è più complesso da sovrascrivere completamente */
+    [data-theme="dark"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    .streamlit-dark div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #AAAAAA !important;
+    }
+    [data-theme="dark"] div[data-testid="stSelectbox"] svg,
+    .streamlit-dark div[data-testid="stSelectbox"] svg {
+        fill: #000000 !important; /* Icona freccia nera */
+    }
+
+    /* TEMA CHIARO: Input con sfondo BIANCO e testo NERO (standard) */
+    [data-theme="light"] div[data-testid="stTextInput"] input,
+    .streamlit-light div[data-testid="stTextInput"] input,
+    [data-theme="light"] div[data-baseweb="input"] input,
+    .streamlit-light div[data-baseweb="input"] input,
+    [data-theme="light"] div[data-testid="stTextArea"] textarea,
+    .streamlit-light div[data-testid="stTextArea"] textarea,
+    [data-theme="light"] div[data-baseweb="textarea"] textarea,
+    .streamlit-light div[data-baseweb="textarea"] textarea,
+    [data-theme="light"] div[data-testid="stNumberInput"] input,
+    .streamlit-light div[data-testid="stNumberInput"] input {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #E0E0E0 !important;
+    }
+
+    [data-theme="light"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    .streamlit-light div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #E0E0E0 !important;
+    }
+    [data-theme="light"] div[data-testid="stSelectbox"] svg,
+    .streamlit-light div[data-testid="stSelectbox"] svg {
+        fill: #000000 !important;
+    }
+
+    /* Stili generali per tutti i componenti input (bordi, padding) */
+    div[data-testid="stTextInput"] input,
+    div[data-baseweb="input"] input,
+    div[data-testid="stTextArea"] textarea,
+    div[data-baseweb="textarea"] textarea,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        border-radius: 4px !important;
+    }
+    /* Mostra interamente il testo selezionato senza troncamento */
+    div[data-baseweb="select"] * {
+        white-space: normal !important;
+    }
+
+    /* Stili per i box delle funzionalità (mantenuti dal codice originale) */
+    .feature-box {
+        background-color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-top: 4px solid #4F6AF0;
+        box-shadow: 0 6px 18px rgba(79, 106, 240, 0.1);
+        transition: all 0.3s ease;
+    }
+    .feature-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(79, 106, 240, 0.15);
+    }
+    .feature-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+    .feature-description {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.5;
+    }
+    .icon-large {
+        font-size: 2rem;
+        margin-right: 0.75rem;
+        background: linear-gradient(135deg, #F0F4FF, #E6EBFF);
+        width: 50px;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(79, 106, 240, 0.1);
+    }
+    .welcome-section {
+        margin-bottom: 2.5rem;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid #4F6AF0;
+    }
+    .welcome-title {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #4F6AF0;
+        margin-bottom: 1rem;
+    }
+    .subtitle {
+        font-size: 1.3rem;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    .getting-started {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+        border-left: 5px solid #4F6AF0;
+    }
+    .getting-started h3 {
+        color: #4F6AF0;
+        margin-bottom: 1rem;
+    }
+    .getting-started ol {
+        padding-left: 1.5rem;
+    }
+    .getting-started li {
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+    }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )

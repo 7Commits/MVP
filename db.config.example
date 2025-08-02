@@ -6,7 +6,7 @@ database=llm_platform
 port=3306
 ssl_ca=
 
-# For Docker environment, use:
+# Per l'ambiente Docker, utilizzare:
 # host=db
 # user=root
 # password=

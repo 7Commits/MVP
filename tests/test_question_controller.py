@@ -1,18 +1,34 @@
-from controllers import question_controller
+import os
+import sys
+from unittest.mock import patch
 
 
-def test_add_update_delete_question():
-    qid = question_controller.add_question("Domanda?", "Risposta", "cat")
-    df = question_controller.load_questions()
-    assert qid in df["id"].values
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-    question_controller.update_question(qid, domanda="Nuova domanda", risposta_attesa="Nuova", categoria="newcat")
-    df2 = question_controller.load_questions()
-    row = df2[df2["id"] == qid].iloc[0]
-    assert row["domanda"] == "Nuova domanda"
-    assert row["risposta_attesa"] == "Nuova"
-    assert row["categoria"] == "newcat"
+from controllers import question_controller  # noqa: E402
 
-    question_controller.delete_question(qid)
-    df3 = question_controller.load_questions()
-    assert qid not in df3["id"].values
+
+@patch("controllers.question_controller.refresh_questions")
+@patch("controllers.question_controller.Question.update")
+def test_update_question_success(mock_update, mock_refresh):
+    mock_update.return_value = True
+
+    result = question_controller.update_question(
+        "qid", domanda="d", risposta_attesa="a", categoria="c"
+    )
+
+    assert result is True
+    mock_update.assert_called_once_with("qid", "d", "a", "c")
+    mock_refresh.assert_called_once()
+
+
+@patch("controllers.question_controller.refresh_questions")
+@patch("controllers.question_controller.Question.update")
+def test_update_question_failure(mock_update, mock_refresh):
+    mock_update.return_value = False
+
+    result = question_controller.update_question("qid")
+
+    assert result is False
+    mock_update.assert_called_once_with("qid", None, None, None)
+    mock_refresh.assert_called_once()

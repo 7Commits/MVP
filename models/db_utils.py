@@ -1,6 +1,7 @@
 import configparser
 from pathlib import Path
 from sqlalchemy import create_engine, text
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 def _ensure_database(cfg):
@@ -12,7 +13,10 @@ def _ensure_database(cfg):
     with engine.begin() as conn:
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{cfg['database']}`"))
 
+
+Base = declarative_base()
 _engine = None
+_SessionFactory = None
 
 
 def get_engine():
@@ -38,59 +42,18 @@ def get_engine():
     return _engine
 
 
+def get_session():
+    """Restituisce una nuova sessione ORM."""
+    global _SessionFactory
+    engine = get_engine()
+    if _SessionFactory is None:
+        _SessionFactory = sessionmaker(bind=engine)
+    return _SessionFactory()
+
+
 def init_db():
     """Crea le tabelle necessarie se non esistono."""
     engine = get_engine()
-    with engine.begin() as conn:
-        conn.execute(
-            text(
-                """CREATE TABLE IF NOT EXISTS questions (
-                    id VARCHAR(36) PRIMARY KEY,
-                    domanda TEXT,
-                    risposta_attesa TEXT,
-                    categoria TEXT
-                )"""
-            )
-        )
-        conn.execute(
-            text(
-                """CREATE TABLE IF NOT EXISTS question_sets (
-                    id VARCHAR(36) PRIMARY KEY,
-                    name TEXT
-                )"""
-            )
-        )
-        conn.execute(
-            text(
-                """CREATE TABLE IF NOT EXISTS question_set_questions (
-                    set_id VARCHAR(36),
-                    question_id VARCHAR(36),
-                    PRIMARY KEY (set_id, question_id)
-                )"""
-            )
-        )
-        conn.execute(
-            text(
-                """CREATE TABLE IF NOT EXISTS test_results (
-                    id VARCHAR(36) PRIMARY KEY,
-                    set_id VARCHAR(36),
-                    timestamp TEXT,
-                    results JSON
-                )"""
-            )
-        )
-        conn.execute(
-            text(
-                """CREATE TABLE IF NOT EXISTS api_presets (
-                    id VARCHAR(36) PRIMARY KEY,
-                    name TEXT,
-                    provider_name TEXT,
-                    endpoint TEXT,
-                    api_key TEXT,
-                    model TEXT,
-                    temperature FLOAT,
-                    max_tokens INT
-                )"""
-            )
-        )
-
+    # Assicura che tutti i modelli ORM siano registrati
+    import models.orm_models  # noqa: F401
+    Base.metadata.create_all(engine)

@@ -19,4 +19,3 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error(f"Errore durante l'inizializzazione del database: {e}")
         logging.exception("Traceback dettagliato:")
-
