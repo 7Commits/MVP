@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 import pandas as pd
 from sqlalchemy import select
 
@@ -18,33 +19,22 @@ class APIPreset:
     max_tokens: int
 
     @staticmethod
-    def load_all() -> pd.DataFrame:
+    def load_all() -> List["APIPreset"]:
         with get_session() as session:
             presets = session.execute(select(APIPresetORM)).scalars().all()
-            data = [
-                {
-                    "id": p.id,
-                    "name": p.name,
-                    "provider_name": p.provider_name,
-                    "endpoint": p.endpoint,
-                    "api_key": p.api_key,
-                    "model": p.model,
-                    "temperature": p.temperature,
-                    "max_tokens": p.max_tokens,
-                }
+            return [
+                APIPreset(
+                    id=p.id,
+                    name=p.name,
+                    provider_name=p.provider_name,
+                    endpoint=p.endpoint,
+                    api_key=p.api_key,
+                    model=p.model,
+                    temperature=p.temperature,
+                    max_tokens=p.max_tokens,
+                )
                 for p in presets
             ]
-        columns = [
-            "id",
-            "name",
-            "provider_name",
-            "endpoint",
-            "api_key",
-            "model",
-            "temperature",
-            "max_tokens",
-        ]
-        return pd.DataFrame(data, columns=columns)
 
     @staticmethod
     def save_df(df: pd.DataFrame) -> None:

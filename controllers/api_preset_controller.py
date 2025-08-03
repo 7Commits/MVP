@@ -1,4 +1,4 @@
-"""Business logic per la gestione dei preset API."""
+"""Utility per la gestione dei preset API."""
 
 import uuid
 from typing import List, Optional, Tuple
@@ -6,21 +6,13 @@ from typing import List, Optional, Tuple
 import pandas as pd
 
 from models.api_preset import APIPreset
-from services.cache import (
+from utils.cache import (
     get_api_presets as _get_api_presets,
     refresh_api_presets as _refresh_api_presets,
 )
-from controllers.startup_controller import (
-    get_default_api_settings as _startup_get_default_api_settings,
-)
-DEFAULT_API_SETTINGS = _startup_get_default_api_settings()
-DEFAULT_MODEL = DEFAULT_API_SETTINGS["model"]
-DEFAULT_ENDPOINT = DEFAULT_API_SETTINGS["endpoint"]
+from openai import APIConnectionError, APIStatusError, RateLimitError
 
-
-def get_default_api_settings() -> dict:
-    """Restituisce l'endpoint e il modello API predefiniti."""
-    return DEFAULT_API_SETTINGS.copy()
+from . import openai_client
 
 
 def load_presets() -> pd.DataFrame:
@@ -40,7 +32,9 @@ def list_presets(df: pd.DataFrame | None = None) -> List[dict]:
     return df.to_dict(orient="records")
 
 
-def get_preset_by_id(preset_id: str, df: pd.DataFrame | None = None) -> Optional[dict]:
+def get_preset_by_id(
+    preset_id: str, df: pd.DataFrame | None = None
+) -> Optional[dict]:
     """Recupera un singolo preset dato il suo ID."""
     if df is None:
         df = load_presets()
@@ -64,7 +58,9 @@ def validate_preset(data: dict, preset_id: Optional[str] = None) -> Tuple[bool, 
     return True, ""
 
 
-def save_preset(data: dict, preset_id: Optional[str] = None) -> Tuple[bool, str, pd.DataFrame]:
+def save_preset(
+    data: dict, preset_id: Optional[str] = None
+) -> Tuple[bool, str, pd.DataFrame]:
     """Salva un nuovo preset o aggiorna uno esistente."""
     is_valid, message = validate_preset(data, preset_id)
     if not is_valid:
@@ -107,3 +103,48 @@ def delete_preset(preset_id: str) -> Tuple[bool, str, pd.DataFrame]:
     APIPreset.delete(preset_id)
     updated_df = refresh_api_presets()
     return True, f"Preset '{preset_name}' eliminato.", updated_df
+
+
+def test_api_connection(
+    api_key: str, endpoint: str, model: str, temperature: float, max_tokens: int
+) -> Tuple[bool, str]:
+    """Testa la connessione all'API LLM con i parametri forniti."""
+
+    client = openai_client.get_openai_client(api_key=api_key, base_url=endpoint)
+    if not client:
+        return False, "Client API non inizializzato. Controlla chiave API e endpoint."
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Test connessione. Rispondi solo con: 'Connessione riuscita.'",
+                }
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        content = response.choices[0].message.content or ""
+        if "Connessione riuscita." in content:
+            return True, "Connessione API riuscita!"
+        return (
+            False,
+            "Risposta inattesa dall'API (potrebbe indicare un problema con il modello o l'endpoint): "
+            f"{content[:200]}...",
+        )
+    except APIConnectionError as e:
+        return False, f"Errore di connessione API: {e}"
+    except RateLimitError as e:
+        return False, f"Errore di Rate Limit API: {e}"
+    except APIStatusError as e:
+        return (
+            False,
+            "Errore di stato API (es. modello '{model}' non valido per l'endpoint '{endpoint}', "
+            f"autenticazione fallita, quota superata): {e.status_code} - {e.message}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return False, (
+            f"Errore imprevisto durante il test della connessione: {type(exc).__name__} - {exc}"
+        )

@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 import uuid
-import pandas as pd
 from sqlalchemy import select
 
 from models.db_utils import get_session
@@ -15,18 +14,17 @@ class QuestionSet:
     questions: List[str] = field(default_factory=list)
 
     @staticmethod
-    def load_all() -> pd.DataFrame:
+    def load_all() -> List["QuestionSet"]:
         with get_session() as session:
             sets = session.execute(select(QuestionSetORM)).scalars().all()
-            data = []
-            for s in sets:
-                data.append({
-                    "id": s.id,
-                    "name": s.name or "",
-                    "questions": [q.id for q in s.questions],
-                })
-        columns = ["id", "name", "questions"]
-        return pd.DataFrame(data, columns=columns)
+            return [
+                QuestionSet(
+                    id=s.id,
+                    name=s.name or "",
+                    questions=[q.id for q in s.questions],
+                )
+                for s in sets
+            ]
 
     @staticmethod
     def create(name: str, question_ids: Optional[List[str]] = None) -> str:

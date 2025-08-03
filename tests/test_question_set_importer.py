@@ -6,13 +6,14 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-import pandas as pd
-import pytest
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
 
-from services.question_set_importer import (
+from controllers.question_set_controller import (  # noqa: E402
     parse_input,
     resolve_question_ids,
     persist_sets,
+    import_sets_from_file,
 )
 
 
@@ -32,7 +33,7 @@ def test_parse_input_json_not_list():
         parse_input(file)
 
 
-@patch("services.question_set_importer.add_question_if_not_exists")
+@patch("controllers.question_set_controller.add_question_if_not_exists")
 def test_resolve_question_ids_adds_and_existing(mock_add):
     mock_add.return_value = True
     current_questions = pd.DataFrame(
@@ -68,8 +69,8 @@ def test_resolve_question_ids_missing_id():
     assert updated_df.empty
 
 
-@patch("services.question_set_importer.refresh_question_sets")
-@patch("services.question_set_importer.QuestionSet.create")
+@patch("controllers.question_set_controller.refresh_question_sets")
+@patch("controllers.question_set_controller.QuestionSet.create")
 def test_persist_sets_skips_duplicates(mock_create, mock_refresh):
     mock_refresh.return_value = pd.DataFrame(
         [{"id": "s1", "name": "Existing", "questions": []}]
@@ -88,3 +89,41 @@ def test_persist_sets_skips_duplicates(mock_create, mock_refresh):
     assert result["sets_imported_count"] == 1
     assert any("esiste già" in w for w in result["warnings"])
     mock_create.assert_called_once_with("New", [])
+
+
+def test_import_sets_from_file_none():
+    result = import_sets_from_file(None)
+    assert not result["success"]
+    assert "Nessun file" in result["error_message"]
+
+
+def test_import_sets_from_file_invalid_json():
+    file = io.BytesIO(b"not json")
+    file.name = "bad.json"
+    result = import_sets_from_file(file)
+    assert result["error_message"] == "Il formato del file json non è valido"
+    assert not result["success"]
+
+
+def test_import_sets_from_file_duplicates_no_error():
+    data = [{"name": "Existing", "questions": []}]
+    file = io.BytesIO(json.dumps(data).encode("utf-8"))
+    file.name = "test.json"
+    with (
+        patch("controllers.question_set_controller.load_questions") as mock_lq,
+        patch("controllers.question_set_controller.load_sets") as mock_ls,
+        patch("controllers.question_set_controller.persist_sets") as mock_ps,
+    ):
+        mock_lq.return_value = pd.DataFrame()
+        mock_ls.return_value = pd.DataFrame()
+        mock_ps.return_value = {
+            "success": False,
+            "success_message": "",
+            "questions_df": pd.DataFrame(),
+            "sets_df": pd.DataFrame(),
+            "warnings": ["dup"],
+        }
+        result = import_sets_from_file(file)
+    assert result["error_message"] == ""
+    assert result["warnings"] == ["dup"]
+    assert not result["success"]

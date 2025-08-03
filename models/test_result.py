@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 import uuid
 import json
 import pandas as pd
@@ -17,19 +17,18 @@ class TestResult:
     results: Dict
 
     @staticmethod
-    def load_all() -> pd.DataFrame:
+    def load_all() -> List["TestResult"]:
         with get_session() as session:
             results = session.execute(select(TestResultORM)).scalars().all()
-            data = []
-            for r in results:
-                data.append({
-                    "id": r.id,
-                    "set_id": r.set_id,
-                    "timestamp": r.timestamp,
-                    "results": r.results or {},
-                })
-        columns = ["id", "set_id", "timestamp", "results"]
-        return pd.DataFrame(data, columns=columns)
+            return [
+                TestResult(
+                    id=r.id,
+                    set_id=r.set_id,
+                    timestamp=r.timestamp,
+                    results=r.results or {},
+                )
+                for r in results
+            ]
 
     @staticmethod
     def save_df(df: pd.DataFrame) -> None:

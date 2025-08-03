@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 import uuid
-import pandas as pd
 from sqlalchemy import select, delete
 
 from models.db_utils import get_session
@@ -16,20 +15,18 @@ class Question:
     categoria: str = ""
 
     @staticmethod
-    def load_all() -> pd.DataFrame:
+    def load_all() -> List["Question"]:
         with get_session() as session:
             results = session.execute(select(QuestionORM)).scalars().all()
-            data = [
-                {
-                    "id": q.id,
-                    "domanda": q.domanda or "",
-                    "risposta_attesa": q.risposta_attesa or "",
-                    "categoria": q.categoria or "",
-                }
+            return [
+                Question(
+                    id=q.id,
+                    domanda=q.domanda or "",
+                    risposta_attesa=q.risposta_attesa or "",
+                    categoria=q.categoria or "",
+                )
                 for q in results
             ]
-        columns = ["id", "domanda", "risposta_attesa", "categoria"]
-        return pd.DataFrame(data, columns=columns)
 
     @staticmethod
     def add(domanda: str, risposta_attesa: str, categoria: str = "", question_id: Optional[str] = None) -> str:

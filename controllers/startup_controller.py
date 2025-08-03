@@ -1,28 +1,22 @@
 import os
 
-from controllers.db_controller import initialize_database
-from services.question_service import load_questions
+from models.db_utils import init_db
+from controllers.question_controller import load_questions
 from controllers.question_set_controller import load_sets
 from controllers.test_controller import load_results
-from services.openai_service import DEFAULT_MODEL, DEFAULT_ENDPOINT
-
-
-def get_default_api_settings() -> dict:
-    """Restituisce l'endpoint e il modello API predefiniti."""
-    return {"model": DEFAULT_MODEL, "endpoint": DEFAULT_ENDPOINT}
+from controllers.openai_client import DEFAULT_MODEL, DEFAULT_ENDPOINT
 
 
 def get_initial_state() -> dict:
     """Inizializza il database e restituisce lo stato di default dell'applicazione."""
-    initialize_database()
-    defaults = get_default_api_settings()
+    init_db()
     return {
         "questions": load_questions(),
         "question_sets": load_sets(),
         "results": load_results(),
         "api_key": os.environ.get("OPENAI_API_KEY", ""),
-        "endpoint": defaults["endpoint"],
-        "model": defaults["model"],
+        "endpoint": DEFAULT_ENDPOINT,
+        "model": DEFAULT_MODEL,
         "temperature": 0.0,
         "max_tokens": 1000,
     }
