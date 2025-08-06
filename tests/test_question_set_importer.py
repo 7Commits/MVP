@@ -105,6 +105,14 @@ def test_import_sets_from_file_invalid_json():
     assert not result["success"]
 
 
+def test_import_sets_from_file_invalid_csv():
+    file = io.BytesIO(b"id,domanda\n\"1,Test")
+    file.name = "bad.csv"
+    result = import_sets_from_file(file)
+    assert result["error_message"] == "Il formato del file csv non è valido"
+    assert not result["success"]
+
+
 def test_import_sets_from_file_duplicates_no_error():
     data = [{"name": "Existing", "questions": []}]
     file = io.BytesIO(json.dumps(data).encode("utf-8"))

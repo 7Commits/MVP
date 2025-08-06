@@ -12,10 +12,12 @@ from views import (
 )
 from views.session_state import initialize_session_state
 from views.style_utils import add_global_styles
-from logging_config import setup_logging
+from controllers.startup_controller import setup_logging
+
+logger = logging.getLogger(__name__)
 
 setup_logging()
-logging.info("Applicazione avviata")
+logger.info("Applicazione avviata")
 
 # Imposta la configurazione della pagina
 st.set_page_config(

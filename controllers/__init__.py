@@ -1,6 +1,8 @@
 """Expose controller utilities for external use."""
 
 # API preset management
+import logging
+
 from .api_preset_controller import (
     load_presets,
     refresh_api_presets,
@@ -47,6 +49,7 @@ from .test_controller import (
 
 # Import helpers
 from .startup_controller import get_initial_state
+logger = logging.getLogger(__name__)
 
 
 __all__ = [

@@ -2,10 +2,13 @@
 
 # mypy: ignore-errors
 
+import logging
+
 from sqlalchemy import Column, String, Text, Float, Integer, ForeignKey, Table, JSON
 from sqlalchemy.orm import relationship
 
 from .db_utils import Base
+logger = logging.getLogger(__name__)
 
 # Tabella di associazione per la relazione molti-a-molti tra set e domande
 question_set_questions = Table(

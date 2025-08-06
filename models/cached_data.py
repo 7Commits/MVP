@@ -1,7 +1,10 @@
+import logging
+
 from models.api_preset import APIPreset
 from models.question import Question
 from models.question_set import QuestionSet
 from models.test_result import TestResult
+logger = logging.getLogger(__name__)
 
 
 def get_questions():

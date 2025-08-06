@@ -2,6 +2,7 @@ import os
 import sys
 from unittest.mock import patch
 
+import io
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -78,3 +79,19 @@ def test_delete_question(mock_delete, mock_refresh):
 
     mock_delete.assert_called_once_with("qid")
     mock_refresh.assert_called_once()
+
+
+def test_import_questions_from_file_invalid_json():
+    file = io.StringIO("not json")
+    file.name = "bad.json"
+    success, message = question_controller.import_questions_from_file(file)
+    assert not success
+    assert message == "Il formato del file json non è valido"
+
+
+def test_import_questions_from_file_invalid_csv():
+    file = io.StringIO("id,domanda\n\"1,Test")
+    file.name = "bad.csv"
+    success, message = question_controller.import_questions_from_file(file)
+    assert not success
+    assert message == "Il formato del file csv non è valido"

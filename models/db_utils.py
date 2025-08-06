@@ -1,17 +1,33 @@
+import logging
+
 import configparser
 from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
+logger = logging.getLogger(__name__)
 
 
 def _ensure_database(cfg):
-    """Create the target database if it does not exist."""
+    """Crea il database di destinazione se non esiste."""
     root_url = (
         f"mysql+pymysql://{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg.get('port', 3306)}"
     )
     engine = create_engine(root_url, isolation_level="AUTOCOMMIT")
-    with engine.begin() as conn:
-        conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{cfg['database']}`"))
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{cfg['database']}`"))
+    except Exception as exc:
+        logger.exception(
+            "Impossibile creare il database '%s' sull'host '%s' con l'utente '%s'",
+            cfg.get('database'),
+            cfg.get('host'),
+            cfg.get('user'),
+        )
+        raise RuntimeError(
+            f"Impossibile creare il database '{cfg.get('database')}' sull'host '{cfg.get('host')}' per l'utente '{cfg.get('user')}'. "
+            "Il server del database potrebbe essere irraggiungibile, le credenziali potrebbero non essere valide "
+            "oppure l'utente potrebbe non avere privilegi sufficienti.",
+        ) from exc
 
 
 Base = declarative_base()

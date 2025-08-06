@@ -1,3 +1,5 @@
+import logging
+
 from dataclasses import dataclass, field
 from typing import List, Optional
 import uuid
@@ -5,6 +7,7 @@ from sqlalchemy import select
 
 from models.db_utils import get_session
 from models.orm_models import QuestionSetORM, QuestionORM
+logger = logging.getLogger(__name__)
 
 
 @dataclass

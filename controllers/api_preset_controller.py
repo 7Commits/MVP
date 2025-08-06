@@ -1,5 +1,7 @@
 """Utility per la gestione dei preset API."""
 
+import logging
+
 import uuid
 from typing import List, Optional, Tuple
 
@@ -13,6 +15,7 @@ from utils.cache import (
 from openai import APIConnectionError, APIStatusError, RateLimitError
 
 from . import openai_client
+logger = logging.getLogger(__name__)
 
 
 def load_presets() -> pd.DataFrame:

@@ -1,3 +1,5 @@
+import logging
+
 from dataclasses import dataclass
 from typing import List
 import pandas as pd
@@ -5,6 +7,7 @@ from sqlalchemy import select
 
 from models.db_utils import get_session
 from models.orm_models import APIPresetORM
+logger = logging.getLogger(__name__)
 
 
 @dataclass

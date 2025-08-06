@@ -1,3 +1,5 @@
+import logging
+
 from dataclasses import dataclass
 from typing import Dict, List
 import uuid
@@ -7,6 +9,7 @@ from sqlalchemy import select
 
 from models.db_utils import get_session
 from models.orm_models import TestResultORM
+logger = logging.getLogger(__name__)
 
 
 @dataclass

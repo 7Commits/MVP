@@ -1,3 +1,4 @@
+import logging
 import os
 import json
 from typing import List, Optional, Any, Dict, Tuple
@@ -11,6 +12,7 @@ from utils.cache import (
     refresh_question_sets as _refresh_question_sets,
 )
 
+logger = logging.getLogger(__name__)
 
 REQUIRED_CSV_COLUMNS = ["name", "id", "domanda", "risposta_attesa", "categoria"]
 
@@ -53,7 +55,11 @@ def parse_input(uploaded_file) -> List[Dict[str, Any]]:
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()
 
     if file_extension == ".csv":
-        df = pd.read_csv(uploaded_file)
+        try:
+            df = pd.read_csv(uploaded_file)
+        except Exception as e:  # pragma: no cover - handled as generic csv error
+            raise ValueError("Il formato del file csv non è valido") from e
+
         missing = [c for c in REQUIRED_CSV_COLUMNS if c not in df.columns]
         if missing:
             raise ValueError(
@@ -80,12 +86,14 @@ def parse_input(uploaded_file) -> List[Dict[str, Any]]:
             sets_dict.setdefault(name, []).append(question)
         return [{"name": n, "questions": qs} for n, qs in sets_dict.items()]
 
-    string_data = uploaded_file.getvalue().decode("utf-8")
-    data = json.loads(string_data)
+    try:
+        string_data = uploaded_file.getvalue().decode("utf-8")
+        data = json.loads(string_data)
+    except Exception as e:  # pragma: no cover - handled as generic json error
+        raise ValueError("Il formato del file json non è valido") from e
+
     if not isinstance(data, list):
-        raise ValueError(
-            "Formato JSON non valido. Il file deve contenere una lista (array) di set."
-        )
+        raise ValueError("Il formato del file json non è valido")
     return data
 
 
@@ -274,10 +282,8 @@ def import_sets_from_file(uploaded_file) -> Dict[str, Any]:
                 "warnings": persist_result["warnings"],
             }
         )
-    except json.JSONDecodeError:
-        result["error_message"] = "Il formato del file json non è valido"
-    except ValueError:
-        result["error_message"] = "Il formato del file json non è valido"
+    except ValueError as e:
+        result["error_message"] = str(e)
     except Exception as e:  # pragma: no cover - general protection
         result["error_message"] = f"Errore imprevisto durante l'importazione: {str(e)}"
 

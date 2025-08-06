@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import logging
+import json
 import uuid
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -18,6 +18,8 @@ from utils.cache import (
     get_results as _get_results,
     refresh_results as _refresh_results,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def load_results() -> pd.DataFrame:
@@ -208,7 +210,7 @@ def evaluate_answer(
         response = client.chat.completions.create(**api_request_details)
         choices = getattr(response, "choices", None)
         if not choices:
-            logging.error("Risposta API priva di 'choices' validi")
+            logger.error("Risposta API priva di 'choices' validi")
             if show_api_details:
                 api_details_for_log["response_content"] = ""
             return {
@@ -233,7 +235,7 @@ def evaluate_answer(
                 "completeness",
             ]
             if not all(key in evaluation for key in required_keys):
-                logging.warning(
+                logger.warning(
                     f"Risposta JSON dalla valutazione LLM incompleta: {content}. Verranno usati valori di default."
                 )
                 for key in required_keys:
@@ -247,7 +249,7 @@ def evaluate_answer(
             evaluation["api_details"] = api_details_for_log
             return evaluation
         except json.JSONDecodeError:
-            logging.error(
+            logger.error(
                 f"Errore: Impossibile decodificare la risposta JSON dalla valutazione LLM: {content}"
             )
             return {
@@ -260,7 +262,7 @@ def evaluate_answer(
             }
 
     except (APIConnectionError, RateLimitError, APIStatusError) as e:
-        logging.error(f"Errore API durante la valutazione: {type(e).__name__} - {e}")
+        logger.error(f"Errore API durante la valutazione: {type(e).__name__} - {e}")
         api_details_for_log["error"] = str(e)
         return {
             "score": 0,
@@ -271,7 +273,7 @@ def evaluate_answer(
             "api_details": api_details_for_log,
         }
     except Exception as exc:  # noqa: BLE001
-        logging.error(
+        logger.error(
             f"Errore imprevisto durante la valutazione: {type(exc).__name__} - {exc}"
         )
         api_details_for_log["error"] = str(exc)
@@ -295,7 +297,7 @@ def generate_example_answer_with_llm(
         base_url=client_config.get("endpoint"),
     )
     if not client:
-        logging.error("Client API per la generazione risposte non configurato.")
+        logger.error("Client API per la generazione risposte non configurato.")
         return {
             "answer": None,
             "api_details": {"error": "Client API non configurato"}
@@ -304,7 +306,7 @@ def generate_example_answer_with_llm(
         }
 
     if question is None or not isinstance(question, str) or question.strip() == "":
-        logging.error("La domanda fornita è vuota o non valida.")
+        logger.error("La domanda fornita è vuota o non valida.")
         return {
             "answer": None,
             "api_details": {"error": "Domanda vuota o non valida"}
@@ -344,7 +346,7 @@ def generate_example_answer_with_llm(
         }
 
     except (APIConnectionError, RateLimitError, APIStatusError) as e:
-        logging.error(
+        logger.error(
             f"Errore API durante la generazione della risposta di esempio: {type(e).__name__} - {e}"
         )
         if show_api_details:
@@ -354,7 +356,7 @@ def generate_example_answer_with_llm(
             "api_details": api_details_for_log if show_api_details else None,
         }
     except Exception as exc:  # noqa: BLE001
-        logging.error(
+        logger.error(
             f"Errore imprevisto durante la generazione della risposta: {type(exc).__name__} - {exc}"
         )
         if show_api_details:

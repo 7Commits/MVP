@@ -1,3 +1,4 @@
+import logging
 import os
 
 from models.db_utils import init_db
@@ -5,6 +6,16 @@ from controllers.question_controller import load_questions
 from controllers.question_set_controller import load_sets
 from controllers.test_controller import load_results
 from controllers.openai_client import DEFAULT_MODEL, DEFAULT_ENDPOINT
+
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(level: int = logging.INFO) -> None:
+    """Configura il logger root con un formato di base."""
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
 
 
 def get_initial_state() -> dict:

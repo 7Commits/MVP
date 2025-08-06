@@ -1,4 +1,6 @@
 """Controller per la gestione delle domande senza layer di service."""
+
+import logging
 from typing import Optional, Tuple, List
 
 import json
@@ -12,6 +14,8 @@ from utils.cache import (
     get_questions as _get_questions,
     refresh_questions as _refresh_questions,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def load_questions() -> pd.DataFrame:
@@ -105,9 +109,15 @@ def import_questions_from_file(file) -> Tuple[bool, str]:
             imported_df = None
 
             if file_extension == ".csv":
-                imported_df = pd.read_csv(file)
+                try:
+                    imported_df = pd.read_csv(file)
+                except Exception:
+                    return False, "Il formato del file csv non è valido"
             elif file_extension == ".json":
-                data = json.load(file)
+                try:
+                    data = json.load(file)
+                except Exception:
+                    return False, "Il formato del file json non è valido"
                 if isinstance(data, list):
                     imported_df = pd.DataFrame(data)
                 elif (
