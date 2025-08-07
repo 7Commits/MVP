@@ -1,4 +1,4 @@
-# Artificial QI – Manuale di Avvio 🧠⚙️
+# Artificial QI – Minimum Viable Product🧠⚙️
 
 Piattaforma sviluppata dal gruppo **7Commits** per la valutazione delle prestazioni di LLM (Large Language Models).
 
@@ -63,9 +63,8 @@ docker compose up -d --build
 ```
 
 infine accedi alla webapp:
-```bash
-http://localhost:8501
-```
+[localhost:8501](http://localhost:8501)
+
 
 ## 🛑 Arresto dell'app (Docker)
 
