@@ -51,7 +51,7 @@ Assicurati che il file db.config contenga:
 ```bash
 [mysql]
 user = root
-password = root
+password =
 host = db
 port = 3306
 database = llm_platform
