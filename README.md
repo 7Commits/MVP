@@ -131,17 +131,98 @@ Puoi salvare, modificare o eliminare preset già configurati.
 
 Qui puoi gestire le **domande e risposte attese**:
 
-- Inserire manualmente domanda e risposta
+- Inserire manualmente domanda e risposta, oppure set di domande e risposte
 - Modificare o eliminare una voce
 - Importare un file `.csv` o `.json` con domande e risposte attese
 
-### 📄 Formato richiesto per importazione
-
+### 📄 Esempio di formato richiesto per importazione domande e risposte CSV
+Deve includere le colonne 'domanda' e 'risposta_attesa'. Può includere opzionalmente 'categoria'.
 ```csv
-domanda,risposta_attesa,categoria (opzionale)
-Qual è la capitale d'Italia?,Roma,Geografia
-Chi ha scritto '1984'?,George Orwell,Letteratura
+domanda,risposta_attesa,categoria
+"Quanto fa 2+2?","4","Matematica Base"
+"Qual è la capitale della Francia?","Parigi","Geografia"
+"Chi ha scritto 'Amleto'?","William Shakespeare","Letteratura"
 ```
+
+### 📄 Esempio di formato richiesto per importazione domande e risposte JSON
+Deve contenere un array di oggetti con i campi 'domanda' e 'risposta_attesa'. Può includere opzionalmente 'categoria'.
+```json
+[
+    {
+        "domanda": "Quanto fa 2+2?",
+        "risposta_attesa": "4",
+        "categoria": "Matematica Base"
+    },
+    {
+        "domanda": "Qual è la capitale della Francia?",
+        "risposta_attesa": "Parigi",
+        "categoria": "Geografia"
+    },
+    {
+        "domanda": "Chi ha scritto 'Romeo e Giulietta'?",
+        "risposta_attesa": "William Shakespeare"
+    }
+]
+```
+
+### 📄 Esempio di formato richiesto per importazione set di domande e risposte CSV
+Ogni riga deve contenere le colonne name (nome del set), id (ID della domanda), domanda (testo), risposta_attesa e categoria.
+```csv
+name,id,domanda,risposta_attesa,categoria
+Capitali,1,Qual è la capitale della Francia?,Parigi,Geografia
+Capitali,2,Qual è la capitale della Germania?,Berlino,Geografia
+Matematica Base,3,Quanto fa 2+2?,4,Matematica
+Matematica Base,4,Quanto fa 10*4?,40,Matematica
+```
+
+
+### 📄 Esempio di formato richiesto per importazione set di domande e risposte JSON
+
+```json
+[
+    {
+        "name": "Capitali",
+        "questions": [
+            {
+                "id": "1",
+                "domanda": "Qual è la capitale della Francia?",
+                "risposta_attesa": "Parigi",
+                "categoria": "Geografia"
+            },
+            {
+                "id": "2",
+                "domanda": "Qual è la capitale della Germania?",
+                "risposta_attesa": "Berlino",
+                "categoria": "Geografia"
+            }
+        ]
+    },
+    {
+        "name": "Matematica Base",
+        "questions": [
+            {
+                "id": "3",
+                "domanda": "Quanto fa 2+2?",
+                "risposta_attesa": "4",
+                "categoria": "Matematica"
+            },
+            {
+                "id": "4",
+                "domanda": "Quanto fa 10*4?",
+                "risposta_attesa": "40",
+                "categoria": "Matematica"
+            }
+        ]
+    }
+]
+```
+#### Note importazione:
+
+- Se una domanda con lo stesso ID esiste già, non verrà aggiunta nuovamente
+- Se un set con lo stesso nome esiste già, verrà saltato
+- Solo le domande nuove verranno aggiunte al database
+- Le domande esistenti verranno referenziate nei nuovi set
+
 
 ## 💬 Supporto tecnico
 
