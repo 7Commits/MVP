@@ -2,11 +2,8 @@ services:
   db:
     image: mysql:8.0
     container_name: db
-    restart: always
-    ports:
-      - "3306:3306"
     volumes:
-      - ./data/:/var/lib/mysql
+      - db_data:/var/lib/mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       MYSQL_ROOT_HOST: '%'
@@ -28,5 +25,6 @@ services:
 
 volumes:
   db_data:
+
 networks:
   llm-network:
