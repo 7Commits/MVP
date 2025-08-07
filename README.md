@@ -50,11 +50,11 @@ cp db.config.example db.config
 Assicurati che il file db.config contenga:
 ```bash
 [mysql]
-user = root
-password =
-host = db
-port = 3306
-database = llm_platform
+host=db
+user=root
+password=
+database=llm_platform
+port=3306
 ```
 
 poi esegui:
@@ -88,11 +88,12 @@ docker compose down
 2. Modifica db.config così:
 ```bash
 [mysql]
-user = tuo_user
-password = tua_password
-host = localhost
-port = 3306
-database = llm_platform
+host=localhost
+user=root
+password=your_password_here
+database=llm_platform
+port=3306
+ssl_ca=
 ```
 3. Installa le dipendenze Python:
 ```bash
