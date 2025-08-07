@@ -153,8 +153,8 @@ def render():
                     st.session_state.results = exec_result['results_df']
                     st.success(f"Test LLM completato! Punteggio medio: {exec_result['avg_score']:.2f}%")
 
-                    # Visualizzazione risultati dettagliati
-                    st.subheader("Risultati Dettagliati")
+                    # Visualizzazione risultati
+                    st.subheader("Risultati riassuntivi del test(Per visualizzare tutti i dettagli, vai alla pagina Visualizza Risultati)")
                     for q_id, result in exec_result['results'].items():
                         with st.expander(
                             f"Domanda: {result['question'][:50]}..."
