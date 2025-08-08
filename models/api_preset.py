@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 from sqlalchemy import select
 
-from models.db_utils import get_session
+from models.database import DatabaseEngine
 from models.orm_models import APIPresetORM
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class APIPreset:
 
     @staticmethod
     def load_all() -> List["APIPreset"]:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             presets = session.execute(select(APIPresetORM)).scalars().all()
             return [
                 APIPreset(
@@ -41,7 +41,7 @@ class APIPreset:
 
     @staticmethod
     def save_df(df: pd.DataFrame) -> None:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             existing_ids = session.execute(select(APIPresetORM.id)).scalars().all()
             incoming_ids = df['id'].astype(str).tolist()
             for del_id in set(existing_ids) - set(incoming_ids):
@@ -65,7 +65,7 @@ class APIPreset:
 
     @staticmethod
     def delete(preset_id: str) -> None:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             obj = session.get(APIPresetORM, preset_id)
             if obj:
                 session.delete(obj)

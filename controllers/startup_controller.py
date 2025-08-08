@@ -1,7 +1,7 @@
 import logging
 import os
 
-from models.db_utils import init_db
+from models.database import DatabaseEngine
 from controllers.question_controller import load_questions
 from controllers.question_set_controller import load_sets
 from controllers.test_controller import load_results
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup_logging(level: int = logging.INFO) -> None:
-    """Configura il logger root con un formato di base."""
+    """Configura il logger radice con un formato di base."""
     logging.basicConfig(
         level=level,
         format="%(asctime)s - %(levelname)s - %(message)s",
@@ -19,8 +19,8 @@ def setup_logging(level: int = logging.INFO) -> None:
 
 
 def get_initial_state() -> dict:
-    """Inizializza il database e restituisce lo stato di default dell'applicazione."""
-    init_db()
+    """Inizializza il database e restituisce lo stato predefinito dell'applicazione."""
+    DatabaseEngine.instance().init_db()
     return {
         "questions": load_questions(),
         "question_sets": load_sets(),

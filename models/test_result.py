@@ -7,7 +7,7 @@ import json
 import pandas as pd
 from sqlalchemy import select
 
-from models.db_utils import get_session
+from models.database import DatabaseEngine
 from models.orm_models import TestResultORM
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class TestResult:
 
     @staticmethod
     def load_all() -> List["TestResult"]:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             results = session.execute(select(TestResultORM)).scalars().all()
             return [
                 TestResult(
@@ -40,7 +40,7 @@ class TestResult:
             df_to_save['results'] = df_to_save['results'].apply(
                 lambda x: json.dumps(x) if isinstance(x, dict) else '{}'
             )
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             existing_ids = session.execute(select(TestResultORM.id)).scalars().all()
             incoming_ids = df_to_save['id'].astype(str).tolist()
             for rid in set(existing_ids) - set(incoming_ids):
@@ -68,7 +68,7 @@ class TestResult:
     @staticmethod
     def add(set_id: str, results_data: Dict) -> str:
         result_id = str(uuid.uuid4())
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             session.add(
                 TestResultORM(
                     id=result_id,

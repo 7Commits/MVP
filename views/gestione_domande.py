@@ -9,7 +9,6 @@ from controllers import (
     delete_question,
     filter_questions_by_category,
     load_questions,
-    refresh_questions,
     import_questions_from_file,
 )
 from views.style_utils import add_page_header
@@ -32,7 +31,7 @@ def save_question_action(
         categoria=edited_category,
     ):
         state.save_success = True
-        st.session_state.questions = refresh_questions()
+        st.session_state.questions = load_questions()
         state.trigger_rerun = True
     else:
         state.save_error = True
@@ -55,7 +54,7 @@ def delete_question_action(question_id) -> QuestionPageState:
     state = QuestionPageState()
     delete_question(question_id)
     state.delete_success = True
-    st.session_state.questions = refresh_questions()
+    st.session_state.questions = load_questions()
     state.trigger_rerun = True
     return state
 
@@ -68,7 +67,7 @@ def import_questions_action(uploaded_file) -> QuestionPageState:
         if success:
             state.import_success = True
             state.import_success_message = message
-            st.session_state.questions = refresh_questions()
+            st.session_state.questions = load_questions()
             state.trigger_rerun = True
         else:
             state.import_error = True
@@ -238,7 +237,7 @@ def render():
                     )
                     state.trigger_rerun = True
                     st.session_state.question_page_state = state
-                    st.session_state.questions = refresh_questions()
+                    st.session_state.questions = load_questions()
                     st.rerun()
                 else:
                     st.error("Sono necessarie sia la domanda che la risposta attesa.")

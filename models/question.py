@@ -5,7 +5,7 @@ from typing import List, Optional
 import uuid
 from sqlalchemy import select, delete
 
-from models.db_utils import get_session
+from models.database import DatabaseEngine
 from models.orm_models import QuestionORM, question_set_questions
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class Question:
 
     @staticmethod
     def load_all() -> List["Question"]:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             results = session.execute(select(QuestionORM)).scalars().all()
             return [
                 Question(
@@ -34,7 +34,7 @@ class Question:
     @staticmethod
     def add(domanda: str, risposta_attesa: str, categoria: str = "", question_id: Optional[str] = None) -> str:
         qid = question_id or str(uuid.uuid4())
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             session.add(
                 QuestionORM(
                     id=qid,
@@ -58,7 +58,7 @@ class Question:
         Restituisce ``True`` se l'aggiornamento è andato a buon fine,
         ``False`` se la domanda non esiste.
         """
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             q = session.get(QuestionORM, question_id)
             if not q:
                 return False
@@ -73,7 +73,7 @@ class Question:
 
     @staticmethod
     def delete(question_id: str) -> None:
-        with get_session() as session:
+        with DatabaseEngine.instance().get_session() as session:
             session.execute(
                 delete(question_set_questions).where(question_set_questions.c.question_id == question_id)
             )
