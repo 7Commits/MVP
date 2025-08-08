@@ -57,7 +57,8 @@ def get_available_models_for_endpoint(
         if not client:
             return ["(Errore creazione client API)", DEFAULT_MODEL]
         try:
-            models = client.models.list()
+            models_response = client.models.list()
+            models = getattr(models_response, "data", models_response)
             filtered_models = sorted(
                 [
                     model.id

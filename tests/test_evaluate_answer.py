@@ -41,12 +41,11 @@ def test_evaluate_answer_success(mock_get_client):
     )
 
     result = test_controller.evaluate_answer(
-        "q", "expected", "actual", {"api_key": "key"}, show_api_details=True
+        "q", "expected", "actual", {"api_key": "key"}
     )
 
     assert result["score"] == 90
     assert result["similarity"] == 90
-    assert "api_details" in result
 
 
 @patch("controllers.test_controller.openai_client.get_openai_client", return_value=None)

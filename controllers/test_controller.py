@@ -149,7 +149,6 @@ def evaluate_answer(
     expected_answer: str,
     actual_answer: str,
     client_config: dict,
-    show_api_details: bool = False,
 ):
     """Valuta una risposta utilizzando un LLM specificato tramite client_config."""
 
@@ -202,29 +201,19 @@ def evaluate_answer(
         "response_format": {"type": "json_object"},
     }
 
-    api_details_for_log = {}
-    if show_api_details:
-        api_details_for_log["request"] = api_request_details.copy()
-
     try:
         response = client.chat.completions.create(**api_request_details)
         choices = getattr(response, "choices", None)
         if not choices:
             logger.error("Risposta API priva di 'choices' validi")
-            if show_api_details:
-                api_details_for_log["response_content"] = ""
             return {
                 "score": 0,
                 "explanation": "Errore: risposta API non valida.",
                 "similarity": 0,
                 "correctness": 0,
                 "completeness": 0,
-                "api_details": api_details_for_log,
             }
         content = choices[0].message.content or "{}"
-        if show_api_details:
-            api_details_for_log["response_content"] = content
-
         try:
             evaluation = json.loads(content)
             required_keys = [
@@ -245,8 +234,6 @@ def evaluate_answer(
                             if key != "explanation"
                             else "Valutazione incompleta o formato JSON non corretto."
                         )
-
-            evaluation["api_details"] = api_details_for_log
             return evaluation
         except json.JSONDecodeError:
             logger.error(
@@ -258,37 +245,32 @@ def evaluate_answer(
                 "similarity": 0,
                 "correctness": 0,
                 "completeness": 0,
-                "api_details": api_details_for_log,
             }
 
     except (APIConnectionError, RateLimitError, APIStatusError) as e:
         logger.error(f"Errore API durante la valutazione: {type(e).__name__} - {e}")
-        api_details_for_log["error"] = str(e)
         return {
             "score": 0,
             "explanation": f"Errore API: {type(e).__name__}",
             "similarity": 0,
             "correctness": 0,
             "completeness": 0,
-            "api_details": api_details_for_log,
         }
     except Exception as exc:  # noqa: BLE001
         logger.error(
             f"Errore imprevisto durante la valutazione: {type(exc).__name__} - {exc}"
         )
-        api_details_for_log["error"] = str(exc)
         return {
             "score": 0,
             "explanation": f"Errore imprevisto: {type(exc).__name__}",
             "similarity": 0,
             "correctness": 0,
             "completeness": 0,
-            "api_details": api_details_for_log,
         }
 
 
 def generate_example_answer_with_llm(
-    question: str, client_config: dict, show_api_details: bool = False
+    question: str, client_config: dict
 ):
     """Genera una risposta di esempio per una domanda utilizzando un LLM."""
 
@@ -298,21 +280,11 @@ def generate_example_answer_with_llm(
     )
     if not client:
         logger.error("Client API per la generazione risposte non configurato.")
-        return {
-            "answer": None,
-            "api_details": {"error": "Client API non configurato"}
-            if show_api_details
-            else None,
-        }
+        return {"answer": None, "error": "Client API non configurato"}
 
     if question is None or not isinstance(question, str) or question.strip() == "":
         logger.error("La domanda fornita è vuota o non valida.")
-        return {
-            "answer": None,
-            "api_details": {"error": "Domanda vuota o non valida"}
-            if show_api_details
-            else None,
-        }
+        return {"answer": None, "error": "Domanda vuota o non valida"}
 
     prompt = f"Rispondi alla seguente domanda in modo conciso e accurato: {question}"
 
@@ -323,10 +295,6 @@ def generate_example_answer_with_llm(
         "max_tokens": client_config.get("max_tokens", 500),
     }
 
-    api_details_for_log = {}
-    if show_api_details:
-        api_details_for_log["request"] = api_request_details.copy()
-
     try:
         response = client.chat.completions.create(**api_request_details)
         answer = (
@@ -334,37 +302,18 @@ def generate_example_answer_with_llm(
             if response.choices and response.choices[0].message.content
             else None
         )
-        if show_api_details:
-            api_details_for_log["response_content"] = (
-                response.choices[0].message.content
-                if response.choices
-                else "Nessun contenuto"
-            )
-        return {
-            "answer": answer,
-            "api_details": api_details_for_log if show_api_details else None,
-        }
+        return {"answer": answer}
 
     except (APIConnectionError, RateLimitError, APIStatusError) as e:
         logger.error(
             f"Errore API durante la generazione della risposta di esempio: {type(e).__name__} - {e}"
         )
-        if show_api_details:
-            api_details_for_log["error"] = str(e)
-        return {
-            "answer": None,
-            "api_details": api_details_for_log if show_api_details else None,
-        }
+        return {"answer": None, "error": str(e)}
     except Exception as exc:  # noqa: BLE001
         logger.error(
             f"Errore imprevisto durante la generazione della risposta: {type(exc).__name__} - {exc}"
         )
-        if show_api_details:
-            api_details_for_log["error"] = str(exc)
-        return {
-            "answer": None,
-            "api_details": api_details_for_log if show_api_details else None,
-        }
+        return {"answer": None, "error": str(exc)}
 
 
 def execute_llm_test(
@@ -373,7 +322,6 @@ def execute_llm_test(
     question_ids: List[str],
     gen_preset_config: Dict,
     eval_preset_config: Dict,
-    show_api_details: bool = False,
 ) -> Dict:
     """Esegue la generazione e valutazione delle risposte tramite LLM."""
 
@@ -403,18 +351,16 @@ def execute_llm_test(
         generation_output = generate_example_answer_with_llm(
             q_data["question"],
             client_config=gen_preset_config,
-            show_api_details=show_api_details,
         )
         actual_answer = generation_output.get("answer")
-        generation_api_details = generation_output.get("api_details")
 
         if actual_answer is None:
+            error_msg = generation_output.get("error", "Generazione fallita")
             results[q_id] = {
                 "question": q_data["question"],
                 "expected_answer": q_data["expected_answer"],
-                "actual_answer": "Errore Generazione",
-                "evaluation": {"score": 0, "explanation": "Generazione fallita"},
-                "generation_api_details": generation_api_details,
+                "actual_answer": error_msg,
+                "evaluation": {"score": 0, "explanation": error_msg},
             }
             continue
 
@@ -423,14 +369,12 @@ def execute_llm_test(
             q_data["expected_answer"],
             actual_answer,
             client_config=eval_preset_config,
-            show_api_details=show_api_details,
         )
         results[q_id] = {
             "question": q_data["question"],
             "expected_answer": q_data["expected_answer"],
             "actual_answer": actual_answer,
             "evaluation": evaluation,
-            "generation_api_details": generation_api_details,
         }
 
     if not results:

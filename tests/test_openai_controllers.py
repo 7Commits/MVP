@@ -34,11 +34,11 @@ def test_generate_example_answer_success(mock_get_client):
 @patch("controllers.test_controller.openai_client.get_openai_client", return_value=None)
 def test_generate_example_answer_no_client(mock_get_client):
     result = test_controller.generate_example_answer_with_llm(
-        "question", {"api_key": None}, show_api_details=True
+        "question", {"api_key": None}
     )
 
     assert result["answer"] is None
-    assert result["api_details"]["error"] == "Client API non configurato"
+    assert result["error"] == "Client API non configurato"
 
 
 @patch("controllers.test_controller.openai_client.get_openai_client")
@@ -46,11 +46,11 @@ def test_generate_example_answer_empty_question(mock_get_client):
     mock_get_client.return_value = Mock()
 
     result = test_controller.generate_example_answer_with_llm(
-        "", {"api_key": "key"}, show_api_details=True
+        "", {"api_key": "key"}
     )
 
     assert result["answer"] is None
-    assert result["api_details"]["error"] == "Domanda vuota o non valida"
+    assert result["error"] == "Domanda vuota o non valida"
 
 
 @patch("controllers.api_preset_controller.openai_client.get_openai_client")

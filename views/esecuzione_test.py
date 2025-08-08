@@ -114,8 +114,6 @@ def render():
         )
         st.session_state.selected_evaluation_preset_name = evaluation_preset_name
 
-    show_api_details = st.checkbox("Mostra Dettagli Chiamate API nei Risultati", value=False)
-
     # --- Logica di Esecuzione Test ---
     test_mode_selected = st.session_state.test_mode
 
@@ -146,15 +144,14 @@ def render():
                         questions_in_set,
                         gen_preset_config,
                         eval_preset_config,
-                        show_api_details=show_api_details,
                     )
 
                 if exec_result:
                     st.session_state.results = exec_result['results_df']
                     st.success(f"Test LLM completato! Punteggio medio: {exec_result['avg_score']:.2f}%")
 
-                    # Visualizzazione risultati
-                    st.subheader("Risultati riassuntivi del test(Per visualizzare tutti i dettagli, vai alla pagina Visualizza Risultati)")
+                    # Visualizzazione risultati dettagliati
+                    st.subheader("Risultati Dettagliati")
                     for q_id, result in exec_result['results'].items():
                         with st.expander(
                             f"Domanda: {result['question'][:50]}..."

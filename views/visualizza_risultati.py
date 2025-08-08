@@ -233,7 +233,6 @@ def render():
         st.markdown(f"**LLM Generazione Risposte:** `{result_data['generation_llm']}`")
     elif 'generation_preset' in result_data:
         st.markdown(f"**Preset Generazione Risposte:** `{result_data['generation_preset']}`")
-    if evaluation_method == "LLM":
         if 'evaluation_llm' in result_data:
             st.markdown(f"**LLM Valutazione Risposte:** `{result_data['evaluation_llm']}`")
         elif 'evaluation_preset' in result_data:
@@ -292,7 +291,6 @@ def render():
             fig.update_layout(yaxis_range=[0, 100])
             st.plotly_chart(fig, use_container_width=True)
 
-        if evaluation_method == "LLM":
             categories = ['Somiglianza', 'Correttezza', 'Completezza']
             fig_radar = go.Figure()
             rm = stats["radar_metrics"]
@@ -384,86 +382,32 @@ def render():
                 st.markdown(f"**Risposta Generata/Effettiva:** {actual_answer}")
                 st.divider()
 
-                # Mostra Dettagli API di Generazione (se presenti e richiesti)
-                generation_api_details = q_data.get('generation_api_details')
-                if generation_api_details and isinstance(generation_api_details, dict):
-                    with st.container():
-                        st.markdown("###### Dettagli Chiamata API di Generazione Risposta")
-                        if generation_api_details.get('request'):
-                            st.caption("Richiesta API Generazione:")
-                            st.json(
-                                generation_api_details['request'], expanded=False
-                            )
-                        if generation_api_details.get('response_content'):
-                            st.caption("Contenuto Risposta API Generazione:")
-                            # Prova a formattare se è una stringa JSON, altrimenti mostra com'è
-                            try:
-                                content = generation_api_details['response_content']
-                                if isinstance(content, str):
-                                    response_data_gen = json.loads(content)
-                                else:
-                                    response_data_gen = content
-                                st.code(
-                                    json.dumps(response_data_gen, indent=2),
-                                    language="json",
-                                )
-                            except Exception:
-                                st.text(
-                                    generation_api_details['response_content']
-                                )
-                        if generation_api_details.get('error'):
-                            st.caption("Errore API Generazione:")
-                            st.error(generation_api_details['error'])
-                    st.divider()
 
-                    if evaluation_method == "LLM":
-                        evaluation = q_data.get(
-                            'evaluation', {}
-                        )  # Assicurati che evaluation sia sempre un dizionario
-                        st.markdown("##### Valutazione LLM")
-                        score = evaluation.get('score', 0)
-                        explanation = evaluation.get(
-                            'explanation', "Nessuna spiegazione."
-                        )
-                        similarity = evaluation.get('similarity', 0)
-                        correctness = evaluation.get('correctness', 0)
-                        completeness = evaluation.get('completeness', 0)
+                evaluation = q_data.get(
+                    'evaluation', {}
+                )  # Assicurati che evaluation sia sempre un dizionario
+                st.markdown("##### Valutazione LLM")
+                score = evaluation.get('score', 0)
+                explanation = evaluation.get(
+                    'explanation', "Nessuna spiegazione."
+                )
+                similarity = evaluation.get('similarity', 0)
+                correctness = evaluation.get('correctness', 0)
+                completeness = evaluation.get('completeness', 0)
 
-                        st.markdown(f"**Punteggio Complessivo:** {score:.2f}%")
-                        st.markdown(f"**Spiegazione:** {explanation}")
+                st.markdown(f"**Punteggio Complessivo:** {score:.2f}%")
+                st.markdown(f"**Spiegazione:** {explanation}")
 
-                        cols_eval_metrics = st.columns(3)
-                        cols_eval_metrics[0].metric(
-                            "Somiglianza", f"{similarity:.2f}%"
-                        )
-                        cols_eval_metrics[1].metric(
-                            "Correttezza", f"{correctness:.2f}%"
-                        )
-                        cols_eval_metrics[2].metric(
-                            "Completezza", f"{completeness:.2f}%"
-                        )
+                cols_eval_metrics = st.columns(3)
+                cols_eval_metrics[0].metric(
+                    "Somiglianza", f"{similarity:.2f}%"
+                )
+                cols_eval_metrics[1].metric(
+                    "Correttezza", f"{correctness:.2f}%"
+                )
+                cols_eval_metrics[2].metric(
+                    "Completezza", f"{completeness:.2f}%"
+                )
 
-                        api_details = evaluation.get('api_details')
-                        if api_details and isinstance(api_details, dict):
-                            with st.container():  # Sostituisce l'expander interno
-                                st.markdown(
-                                    "###### Dettagli Chiamata API di Valutazione"
-                                )
-                                if api_details.get('request'):
-                                    st.caption("Richiesta API:")
-                                    st.json(api_details['request'], expanded=False)
-                                if api_details.get('response_content'):
-                                    st.caption("Contenuto Risposta API:")
-                                    content = api_details['response_content']
-                                    parsed = json.loads(content) if isinstance(
-                                        content, str
-                                    ) else content
-                                    st.code(
-                                        json.dumps(parsed, indent=2),
-                                        language="json",
-                                    )
-                                if api_details.get('error'):
-                                    st.caption("Errore API:")
-                                    st.error(api_details['error'])
 
                 st.markdown("--- --- ---")
