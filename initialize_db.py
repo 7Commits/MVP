@@ -4,7 +4,7 @@ from controllers.startup_controller import setup_logging
 logger = logging.getLogger(__name__)
 
 try:
-    from models.db_utils import init_db
+    from models.database import init_db
 except ModuleNotFoundError as exc:
     logger.error(
         "Modulo mancante. Installa le dipendenze con 'pip install -r requirements.txt'"
