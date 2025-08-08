@@ -10,15 +10,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL = "gpt-4o"
 DEFAULT_ENDPOINT = "https://api.openai.com/v1"
 
-# Modelli disponibili per diversi provider (esempio)
-OPENAI_MODELS = ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
-ANTHROPIC_MODELS = [
-    "claude-3-opus-20240229",
-    "claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307",
-]
-# Aggiungi altri provider e modelli se necessario
-# XAI_MODELS = ["grok-1"]
 
 
 def get_openai_client(api_key: str, base_url: str | None = None):
@@ -41,11 +32,6 @@ def get_available_models_for_endpoint(
     provider_name: str, endpoint_url: str | None = None, api_key: str | None = None
 ):
     """Restituisce una lista di modelli disponibili basata sul provider o sull'endpoint."""
-
-    if provider_name == "OpenAI":
-        return OPENAI_MODELS
-    if provider_name == "Anthropic":
-        return ANTHROPIC_MODELS
     # Aggiungi altri provider predefiniti qui
     # elif provider_name == "XAI":
     #     return XAI_MODELS
