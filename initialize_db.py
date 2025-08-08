@@ -4,7 +4,7 @@ from controllers.startup_controller import setup_logging
 logger = logging.getLogger(__name__)
 
 try:
-    from models.database import init_db
+    from models.database import DatabaseEngine
 except ModuleNotFoundError as exc:
     logger.error(
         "Modulo mancante. Installa le dipendenze con 'pip install -r requirements.txt'"
@@ -14,10 +14,10 @@ except ModuleNotFoundError as exc:
 
 if __name__ == '__main__':
     setup_logging()
-    logger.info("Inizializzazione del database in corso...")
+    logger.info("Inizializzazione del database...")
     try:
-        init_db()
+        DatabaseEngine.instance().init_db()
         logger.info("Database inizializzato con successo!")
     except Exception as e:
         logger.error(f"Errore durante l'inizializzazione del database: {e}")
-        logger.exception("Traceback dettagliato:")
+        logger.exception("Traccia dettagliata:")
