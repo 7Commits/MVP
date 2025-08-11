@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Tuple, Any
+from typing import Any, Dict, IO, List, Tuple
 
 import pandas as pd
 from openai import APIConnectionError, APIStatusError, RateLimitError
@@ -29,7 +29,9 @@ def refresh_results() -> pd.DataFrame:
     return TestResult.refresh_cache()
 
 
-def import_results_action(uploaded_file) -> Tuple[pd.DataFrame, str]:
+def import_results_action(
+    uploaded_file: IO[str] | IO[bytes],
+) -> Tuple[pd.DataFrame, str]:
     """Importa risultati da ``uploaded_file`` e restituisce il DataFrame aggiornato.
 
     Parametri
@@ -65,8 +67,9 @@ def generate_answer(question: str, client_config: Dict[str, Any]) -> str:
     un'eccezione.
     """
 
+    api_key = str(client_config.get("api_key", ""))
     client = openai_client.get_openai_client(
-        api_key=client_config.get("api_key"),
+        api_key=api_key,
         base_url=client_config.get("endpoint"),
     )
     if not client:
@@ -115,8 +118,9 @@ def evaluate_answer(
     un'eccezione in caso di errore.
     """
 
+    api_key = str(client_config.get("api_key", ""))
     client = openai_client.get_openai_client(
-        api_key=client_config.get("api_key"),
+        api_key=api_key,
         base_url=client_config.get("endpoint"),
     )
     if not client:
@@ -195,9 +199,9 @@ def run_test(
     set_id: str,
     set_name: str,
     question_ids: List[str],
-    gen_preset_config: Dict,
-    eval_preset_config: Dict,
-) -> Dict:
+    gen_preset_config: dict[str, Any],
+    eval_preset_config: dict[str, Any],
+) -> dict[str, Any]:
     """Esegue un test generando e valutando risposte con LLM."""
 
     try:

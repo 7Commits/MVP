@@ -1,7 +1,7 @@
 """Controller per la gestione delle domande senza layer di service."""
 
 import logging
-from typing import Optional, Tuple, List, Dict, Any
+from typing import IO, Optional, Tuple, List, Dict, Any
 
 import pandas as pd
 
@@ -106,7 +106,7 @@ def delete_question_action(question_id: str) -> pd.DataFrame:
     return questions
 
 
-def import_questions_action(uploaded_file) -> Dict[str, Any]:
+def import_questions_action(uploaded_file: IO[str] | IO[bytes]) -> Dict[str, Any]:
     """Importa domande da file e restituisce i risultati dell'operazione.
 
     Parametri

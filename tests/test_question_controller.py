@@ -1,6 +1,5 @@
 import os
 import sys
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -10,12 +9,12 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from controllers import question_controller  # noqa: E402
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.add")
-@patch("controllers.question_controller.load_questions")
-def test_add_question_if_not_exists_existing(
-    mock_load_questions, mock_add, mock_refresh
-):
+def test_add_question_if_not_exists_existing(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_add = mocker.patch("controllers.question_controller.Question.add")
+    mock_load_questions = mocker.patch(
+        "controllers.question_controller.load_questions"
+    )
     mock_load_questions.return_value = pd.DataFrame({"id": ["123"]})
 
     result = question_controller.add_question_if_not_exists(
@@ -30,10 +29,12 @@ def test_add_question_if_not_exists_existing(
     mock_refresh.assert_not_called()
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.add")
-@patch("controllers.question_controller.load_questions")
-def test_add_question_if_not_exists_new(mock_load_questions, mock_add, mock_refresh):
+def test_add_question_if_not_exists_new(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_add = mocker.patch("controllers.question_controller.Question.add")
+    mock_load_questions = mocker.patch(
+        "controllers.question_controller.load_questions"
+    )
     mock_load_questions.return_value = pd.DataFrame({"id": ["456"]})
 
     result = question_controller.add_question_if_not_exists(
@@ -48,9 +49,9 @@ def test_add_question_if_not_exists_new(mock_load_questions, mock_add, mock_refr
     mock_refresh.assert_called_once()
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.add")
-def test_add_question(mock_add, mock_refresh):
+def test_add_question(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_add = mocker.patch("controllers.question_controller.Question.add")
     mock_add.return_value = "qid"
 
     result = question_controller.add_question("dom", "ans", "cat", "qid")
@@ -60,9 +61,9 @@ def test_add_question(mock_add, mock_refresh):
     mock_refresh.assert_called_once()
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.update")
-def test_update_question(mock_update, mock_refresh):
+def test_update_question(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_update = mocker.patch("controllers.question_controller.Question.update")
     mock_update.return_value = True
 
     result = question_controller.update_question("qid", "dom", "ans", "cat")
@@ -72,15 +73,17 @@ def test_update_question(mock_update, mock_refresh):
     mock_refresh.assert_called_once()
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.delete")
-def test_delete_question(mock_delete, mock_refresh):
+def test_delete_question(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_delete = mocker.patch("controllers.question_controller.Question.delete")
     question_controller.delete_question("qid")
 
     mock_delete.assert_called_once_with("qid")
     mock_refresh.assert_called_once()
-@patch("controllers.question_controller.Question.filter_by_category")
-def test_get_filtered_questions(mock_filter):
+def test_get_filtered_questions(mocker):
+    mock_filter = mocker.patch(
+        "controllers.question_controller.Question.filter_by_category"
+    )
     df = pd.DataFrame(
         {
             "id": ["1"],
@@ -97,8 +100,8 @@ def test_get_filtered_questions(mock_filter):
     assert questions["id"].tolist() == ["1"]
 
 
-@patch("utils.cache.get_questions")
-def test_filter_by_category(mock_get_questions):
+def test_filter_by_category(mocker):
+    mock_get_questions = mocker.patch("utils.cache.get_questions")
     mock_get_questions.return_value = pd.DataFrame(
         {
             "id": ["1", "2"],
@@ -113,8 +116,8 @@ def test_filter_by_category(mock_get_questions):
     assert filtered_df["id"].tolist() == ["1"]
 
 
-@patch("utils.cache.get_questions")
-def test_filter_by_category_no_category_column(mock_get_questions):
+def test_filter_by_category_no_category_column(mocker):
+    mock_get_questions = mocker.patch("utils.cache.get_questions")
     mock_get_questions.return_value = pd.DataFrame(
         {
             "id": ["1"],
@@ -129,8 +132,8 @@ def test_filter_by_category_no_category_column(mock_get_questions):
     assert categories == ["N/A"]
 
 
-@patch("utils.cache.get_questions")
-def test_filter_by_category_empty_df(mock_get_questions):
+def test_filter_by_category_empty_df(mocker):
+    mock_get_questions = mocker.patch("utils.cache.get_questions")
     mock_get_questions.return_value = pd.DataFrame()
 
     filtered_df, categories = question_controller.Question.filter_by_category()
@@ -138,18 +141,18 @@ def test_filter_by_category_empty_df(mock_get_questions):
     assert categories == []
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.load_questions")
-def test_get_question_text_found(mock_load, mock_refresh):
+def test_get_question_text_found(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_load = mocker.patch("controllers.question_controller.load_questions")
     mock_load.return_value = pd.DataFrame({"id": ["1"], "domanda": ["Q1"]})
     text = question_controller.get_question_text("1")
     mock_refresh.assert_not_called()
     assert text == "Q1"
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.load_questions")
-def test_get_question_text_refresh(mock_load, mock_refresh):
+def test_get_question_text_refresh(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_load = mocker.patch("controllers.question_controller.load_questions")
     mock_load.return_value = pd.DataFrame({"id": ["1"]})
     mock_refresh.return_value = pd.DataFrame({"id": ["1"], "domanda": ["Q1"]})
     text = question_controller.get_question_text("1")
@@ -157,18 +160,18 @@ def test_get_question_text_refresh(mock_load, mock_refresh):
     assert text == "Q1"
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.load_questions")
-def test_get_question_category_found(mock_load, mock_refresh):
+def test_get_question_category_found(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_load = mocker.patch("controllers.question_controller.load_questions")
     mock_load.return_value = pd.DataFrame({"id": ["1"], "categoria": ["C1"]})
     cat = question_controller.get_question_category("1")
     mock_refresh.assert_not_called()
     assert cat == "C1"
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.load_questions")
-def test_get_question_category_refresh(mock_load, mock_refresh):
+def test_get_question_category_refresh(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_load = mocker.patch("controllers.question_controller.load_questions")
     mock_load.return_value = pd.DataFrame({"id": ["1"]})
     mock_refresh.return_value = pd.DataFrame({"id": ["1"], "categoria": ["C1"]})
     cat = question_controller.get_question_category("1")
@@ -176,9 +179,9 @@ def test_get_question_category_refresh(mock_load, mock_refresh):
     assert cat == "C1"
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.update_question")
-def test_save_question_action_success(mock_update, mock_refresh):
+def test_save_question_action_success(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_update = mocker.patch("controllers.question_controller.update_question")
     mock_update.return_value = True
     df = pd.DataFrame({"id": ["1"]})
     mock_refresh.return_value = df
@@ -193,9 +196,9 @@ def test_save_question_action_success(mock_update, mock_refresh):
     assert result["questions_df"].equals(df)
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.update_question")
-def test_save_question_action_failure(mock_update, mock_refresh):
+def test_save_question_action_failure(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_update = mocker.patch("controllers.question_controller.update_question")
     mock_update.return_value = False
     result = question_controller.save_question_action("1", "q", "a", "c")
 
@@ -204,9 +207,9 @@ def test_save_question_action_failure(mock_update, mock_refresh):
     assert result["questions_df"] is None
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.delete_question")
-def test_delete_question_action(mock_delete, mock_refresh):
+def test_delete_question_action(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_delete = mocker.patch("controllers.question_controller.delete_question")
     df = pd.DataFrame()
     mock_refresh.return_value = df
 
@@ -217,9 +220,11 @@ def test_delete_question_action(mock_delete, mock_refresh):
     assert result.equals(df)
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.import_from_file")
-def test_import_questions_action_success(mock_import, mock_refresh):
+def test_import_questions_action_success(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_import = mocker.patch(
+        "controllers.question_controller.Question.import_from_file"
+    )
     mock_import.return_value = {
         "success": True,
         "imported_count": 1,
@@ -243,9 +248,11 @@ def test_import_questions_action_no_file():
         question_controller.import_questions_action(None)
 
 
-@patch("controllers.question_controller.refresh_questions")
-@patch("controllers.question_controller.Question.import_from_file")
-def test_import_questions_action_failure(mock_import, mock_refresh):
+def test_import_questions_action_failure(mocker):
+    mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
+    mock_import = mocker.patch(
+        "controllers.question_controller.Question.import_from_file"
+    )
     mock_import.return_value = {
         "success": False,
         "imported_count": 0,

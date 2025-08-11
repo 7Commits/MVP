@@ -1,6 +1,5 @@
 import os
 import sys
-from unittest.mock import patch
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -41,9 +40,9 @@ class DummyEngine:
         return self.session
 
 
-@patch("models.question.DatabaseEngine.instance")
-def test_import_from_file_skips_duplicates_and_adds_new(mock_engine):
+def test_import_from_file_skips_duplicates_and_adds_new(mocker):
     engine = DummyEngine()
+    mock_engine = mocker.patch("models.question.DatabaseEngine.instance")
     mock_engine.return_value = engine
     data_dir = os.path.join(os.path.dirname(__file__), "sample_data")
 

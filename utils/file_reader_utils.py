@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Iterable, Tuple
+from typing import IO, Any, Dict, Iterable, List, Tuple
 
 import pandas as pd
 
@@ -43,7 +43,7 @@ def filter_new_rows(df: pd.DataFrame, existing_ids: Iterable[str]) -> Tuple[pd.D
     return filtered, int(mask.sum())
 
 
-def read_questions(file) -> pd.DataFrame:
+def read_questions(file: IO[str] | IO[bytes]) -> pd.DataFrame:
     """Legge un file di domande (CSV o JSON) e restituisce un DataFrame normalizzato."""
     if hasattr(file, "seek"):
         file.seek(0)
@@ -99,7 +99,7 @@ def read_questions(file) -> pd.DataFrame:
     return df[["id", "domanda", "risposta_attesa", "categoria"]]
 
 
-def read_question_sets(file) -> List[Dict[str, Any]]:
+def read_question_sets(file: IO[str] | IO[bytes]) -> List[Dict[str, Any]]:
     """Legge un file di set di domande (CSV o JSON) e restituisce una lista di dizionari."""
     if hasattr(file, "seek"):
         file.seek(0)
@@ -154,7 +154,7 @@ def read_question_sets(file) -> List[Dict[str, Any]]:
         raise ValueError("Formato file non supportato. Caricare un file CSV o JSON.")
 
 
-def read_test_results(file) -> pd.DataFrame:
+def read_test_results(file: IO[str] | IO[bytes]) -> pd.DataFrame:
     """Legge un file di risultati di test (CSV o JSON) e restituisce un DataFrame normalizzato."""
     if hasattr(file, "seek"):
         file.seek(0)

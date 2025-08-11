@@ -1,10 +1,11 @@
 import logging
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any
+from typing import IO, List, Optional, Tuple, Dict, Any, cast
 import uuid
 import pandas as pd
 from sqlalchemy import select, delete
+from sqlalchemy.orm import Mapper
 
 from models.database import DatabaseEngine
 from models.orm_models import QuestionORM, question_set_questions
@@ -124,14 +125,15 @@ class Question:
 
             if added_count > 0:
                 session.bulk_insert_mappings(
-                    QuestionORM, new_rows.to_dict(orient="records")
+                    cast(Mapper[Any], QuestionORM.__mapper__),
+                    new_rows.to_dict(orient="records"),
                 )
                 session.commit()
 
         return added_count, warnings
 
     @staticmethod
-    def import_from_file(file) -> Dict[str, Any]:
+    def import_from_file(file: IO[str] | IO[bytes]) -> Dict[str, Any]:
         """Importa domande da un file CSV o JSON.
 
         Parametri

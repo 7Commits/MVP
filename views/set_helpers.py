@@ -1,4 +1,5 @@
 import logging
+from typing import IO, cast
 
 import streamlit as st
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 def save_set_callback(
     set_id: str,
     edited_name: str,
-    question_options_checkboxes: dict,
+    question_options_checkboxes: dict[str, bool],
     newly_selected_questions_ids: list[str],
     state: SetPageState,
 ) -> None:
@@ -94,8 +95,12 @@ def import_set_callback(state: SetPageState):
     state.import_set_error_message = ""
 
     uploaded_file = st.session_state.get("uploaded_file_content_set")
+    if uploaded_file is None:
+        raise ValueError("Nessun file caricato.")
     try:
-        result = QuestionSet.import_from_file(uploaded_file)
+        result = QuestionSet.import_from_file(
+            cast(IO[str] | IO[bytes], uploaded_file)
+        )
 
         parts: list[str] = []
         if result.sets_imported_count > 0:

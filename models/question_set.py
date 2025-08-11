@@ -1,7 +1,7 @@
 import logging
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, IO, List, Optional, Tuple
 import uuid
 import pandas as pd
 from sqlalchemy import select
@@ -236,7 +236,7 @@ class QuestionSet:
         )
 
     @staticmethod
-    def import_from_file(uploaded_file) -> "PersistSetsResult":
+    def import_from_file(uploaded_file: IO[str] | IO[bytes]) -> "PersistSetsResult":
         """Importa uno o più set di domande da un file JSON o CSV."""
 
         if uploaded_file is None:

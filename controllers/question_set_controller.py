@@ -36,16 +36,20 @@ def update_set(
     set_id: str,
     name: Optional[str] = None,
     question_ids: Optional[List[str]] = None,
-) -> None:
-    """Aggiorna un set di domande esistente e ricarica la cache."""
+) -> pd.DataFrame:
+    """Aggiorna un set di domande esistente e ricarica la cache.
+
+    Restituisce il DataFrame aggiornato dei set di domande."""
     QuestionSet.update(set_id, name, question_ids)
-    refresh_question_sets()
+    return refresh_question_sets()
 
 
-def delete_set(set_id: str) -> None:
-    """Elimina un set di domande e aggiorna la cache."""
+def delete_set(set_id: str) -> pd.DataFrame:
+    """Elimina un set di domande e aggiorna la cache.
+
+    Restituisce il DataFrame aggiornato dei set di domande."""
     QuestionSet.delete(set_id)
-    refresh_question_sets()
+    return refresh_question_sets()
 
 
 def prepare_sets_for_view(

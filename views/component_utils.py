@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import streamlit as st
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def create_card(title: str, content: str, icon: str | None = None,
     )
 
 
-def create_metrics_container(metrics_data: list[dict]):
+def create_metrics_container(metrics_data: list[dict[str, Any]]) -> None:
     """Crea un contenitore con metriche ben stilizzate."""
     st.markdown(
         """

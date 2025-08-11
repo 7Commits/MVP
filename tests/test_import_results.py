@@ -1,6 +1,5 @@
 import os
 import sys
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -14,15 +13,10 @@ data_dir = os.path.join(os.path.dirname(__file__), "sample_data")
 
 
 @pytest.mark.parametrize("filename", ["test_results.csv", "test_results.json"])
-@patch("models.test_result.TestResult.refresh_cache")
-@patch("models.test_result.TestResult.save")
-@patch("models.test_result.TestResult.load_all_df")
-def test_import_from_file_skips_duplicates_and_saves(
-    mock_load,
-    mock_save,
-    mock_refresh,
-    filename,
-):
+def test_import_from_file_skips_duplicates_and_saves(mocker, filename):
+    mock_load = mocker.patch("models.test_result.TestResult.load_all_df")
+    mock_save = mocker.patch("models.test_result.TestResult.save")
+    mock_refresh = mocker.patch("models.test_result.TestResult.refresh_cache")
     mock_load.return_value = pd.DataFrame(
         [{"id": "1", "set_id": "s1", "timestamp": "t0", "results": {}}]
     )

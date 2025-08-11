@@ -1,0 +1,68 @@
+import importlib
+import sys
+import types
+from pathlib import Path
+
+
+def test_app_page_config_and_navigation(monkeypatch):
+    """Smoke test for Streamlit app configuration and navigation setup."""
+    # Record calls to Streamlit API
+    page_config = {}
+    radio_call = {}
+
+    def fake_set_page_config(**kwargs):
+        page_config.update(kwargs)
+
+    def fake_radio(label, options):
+        radio_call["label"] = label
+        radio_call["options"] = options
+        return options[0]
+
+    fake_sidebar = types.SimpleNamespace(radio=fake_radio)
+    fake_st = types.SimpleNamespace(
+        set_page_config=fake_set_page_config,
+        sidebar=fake_sidebar,
+        title=lambda *a, **k: None,
+    )
+
+    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+
+    # Ensure repository root is importable
+    project_root = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(project_root))
+
+    # Stub view modules required by app.py
+    views_pkg = types.ModuleType("views")
+    views_pkg.__path__ = []  # mark as package
+    view_names = [
+        "api_configurazione",
+        "esecuzione_test",
+        "gestione_domande",
+        "gestione_set",
+        "home",
+        "visualizza_risultati",
+    ]
+    for name in view_names:
+        mod = types.ModuleType(f"views.{name}")
+        mod.render = lambda: None
+        sys.modules[f"views.{name}"] = mod
+        setattr(views_pkg, name, mod)
+
+    session_state_mod = types.ModuleType("views.session_state")
+    session_state_mod.initialize_session_state = lambda: None
+    sys.modules["views.session_state"] = session_state_mod
+
+    style_utils_mod = types.ModuleType("views.style_utils")
+    style_utils_mod.add_global_styles = lambda: None
+    sys.modules["views.style_utils"] = style_utils_mod
+
+    sys.modules["views"] = views_pkg
+
+    # Ensure a fresh import of app
+    monkeypatch.delitem(sys.modules, "app", raising=False)
+    app = importlib.import_module("app")
+
+    assert page_config["page_title"] == "LLM Test Evaluation Platform"
+    assert radio_call["label"] == "Navigazione"
+    assert radio_call["options"] == list(app.PAGES.keys())
+

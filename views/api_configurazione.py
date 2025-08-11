@@ -30,7 +30,7 @@ def start_new_preset_edit():
     }
 
 
-def start_existing_preset_edit(preset_id):
+def start_existing_preset_edit(preset_id: str) -> None:
     preset_to_edit = get_preset_by_id(preset_id, st.session_state.api_presets)
     if not preset_to_edit:
         st.error("Preset non trovato.")

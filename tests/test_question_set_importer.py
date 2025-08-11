@@ -1,6 +1,5 @@
 import io
 import json
-from unittest.mock import patch
 
 import os
 import sys
@@ -32,8 +31,10 @@ def test_read_question_sets_json_not_list():
         read_question_sets(file)
 
 
-@patch("controllers.question_controller.add_question_if_not_exists")
-def test_resolve_question_ids_adds_and_existing(mock_add):
+def test_resolve_question_ids_adds_and_existing(mocker):
+    mock_add = mocker.patch(
+        "controllers.question_controller.add_question_if_not_exists"
+    )
     mock_add.return_value = True
     current_questions = pd.DataFrame(
         [{"id": "2", "domanda": "", "risposta_attesa": "", "categoria": ""}]
@@ -76,9 +77,9 @@ def test_resolve_question_ids_missing_id():
     assert updated_df.empty
 
 
-@patch("utils.cache.refresh_question_sets")
-@patch("models.question_set.QuestionSet.create")
-def test_persist_sets_skips_duplicates(mock_create, mock_refresh):
+def test_persist_sets_skips_duplicates(mocker):
+    mock_refresh = mocker.patch("utils.cache.refresh_question_sets")
+    mock_create = mocker.patch("models.question_set.QuestionSet.create")
     mock_refresh.return_value = pd.DataFrame(
         [{"id": "s1", "name": "Existing", "questions": []}]
     )

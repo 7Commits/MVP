@@ -2,7 +2,7 @@ import logging
 
 from dataclasses import dataclass, asdict
 import uuid
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 from functools import lru_cache
 
 import pandas as pd
@@ -19,7 +19,7 @@ class TestResult:
     id: str
     set_id: str
     timestamp: str
-    results: Dict
+    results: dict[str, Any]
     __test__ = False
 
     @staticmethod
@@ -28,10 +28,10 @@ class TestResult:
             results = session.execute(select(TestResultORM)).scalars().all()
             return [
                 TestResult(
-                    id=r.id,
-                    set_id=r.set_id,
-                    timestamp=r.timestamp,
-                    results=r.results or {},
+                    id=cast(str, r.id),
+                    set_id=cast(str, r.set_id),
+                    timestamp=cast(str, r.timestamp),
+                    results=cast(dict[str, Any], r.results or {}),
                 )
                 for r in results
             ]
@@ -118,15 +118,16 @@ class TestResult:
             for result in results:
                 obj = session.get(TestResultORM, result.id)
                 if obj:
-                    obj.set_id = result.set_id
-                    obj.timestamp = result.timestamp
-                    obj.results = result.results
+                    obj_cast = cast(Any, obj)
+                    obj_cast.set_id = result.set_id
+                    obj_cast.timestamp = result.timestamp
+                    obj_cast.results = result.results
                 else:
                     session.add(TestResultORM(**asdict(result)))
             session.commit()
 
     @staticmethod
-    def add(set_id: str, results_data: Dict) -> str:
+    def add(set_id: str, results_data: dict[str, Any]) -> str:
         result_id = str(uuid.uuid4())
         with DatabaseEngine.instance().get_session() as session:
             session.add(
@@ -141,7 +142,7 @@ class TestResult:
         return result_id
 
     @staticmethod
-    def add_and_refresh(set_id: str, results_data: Dict) -> str:
+    def add_and_refresh(set_id: str, results_data: dict[str, Any]) -> str:
         """Salva un singolo risultato e aggiorna il DataFrame in cache."""
         rid = TestResult.add(set_id, results_data)
         TestResult.refresh_cache()

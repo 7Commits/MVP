@@ -1,6 +1,5 @@
 import os
 import sys
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -11,47 +10,49 @@ from controllers import api_preset_controller  # noqa: E402
 from controllers.test_controller import generate_answer  # noqa: E402
 
 
-def _mock_response(content: str):
+def _mock_response(mocker, content: str):
     """Crea una risposta simulata con il contenuto fornito."""
-    mock_resp = Mock()
-    mock_choice = Mock()
-    mock_choice.message = Mock()
+    mock_resp = mocker.Mock()
+    mock_choice = mocker.Mock()
+    mock_choice.message = mocker.Mock()
     mock_choice.message.content = content
     mock_resp.choices = [mock_choice]
     return mock_resp
 
 
-@patch("utils.openai_client.get_openai_client")
-def test_generate_answer_success(mock_get_client):
-    mock_client = Mock()
+def test_generate_answer_success(mocker):
+    mock_get_client = mocker.patch("utils.openai_client.get_openai_client")
+    mock_client = mocker.Mock()
     mock_get_client.return_value = mock_client
-    mock_client.chat.completions.create.return_value = _mock_response(" answer ")
+    mock_client.chat.completions.create.return_value = _mock_response(
+        mocker, " answer "
+    )
 
     result = generate_answer("question", {"api_key": "key"})
 
     assert result == "answer"
 
 
-@patch("utils.openai_client.get_openai_client", return_value=None)
-def test_generate_answer_no_client(mock_get_client):
+def test_generate_answer_no_client(mocker):
+    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
     with pytest.raises(ValueError):
         generate_answer("question", {"api_key": None})
 
 
-@patch("utils.openai_client.get_openai_client")
-def test_generate_answer_empty_question(mock_get_client):
-    mock_get_client.return_value = Mock()
+def test_generate_answer_empty_question(mocker):
+    mock_get_client = mocker.patch("utils.openai_client.get_openai_client")
+    mock_get_client.return_value = mocker.Mock()
 
     with pytest.raises(ValueError):
         generate_answer("", {"api_key": "key"})
 
 
-@patch("utils.openai_client.get_openai_client")
-def test_test_api_connection_success(mock_get_client):
-    mock_client = Mock()
+def test_test_api_connection_success(mocker):
+    mock_get_client = mocker.patch("utils.openai_client.get_openai_client")
+    mock_client = mocker.Mock()
     mock_get_client.return_value = mock_client
     mock_client.chat.completions.create.return_value = _mock_response(
-        "Connessione riuscita."
+        mocker, "Connessione riuscita."
     )
 
     ok, msg = api_preset_controller.test_api_connection(
@@ -62,11 +63,13 @@ def test_test_api_connection_success(mock_get_client):
     assert msg == "Connessione API riuscita!"
 
 
-@patch("utils.openai_client.get_openai_client")
-def test_test_api_connection_unexpected_response(mock_get_client):
-    mock_client = Mock()
+def test_test_api_connection_unexpected_response(mocker):
+    mock_get_client = mocker.patch("utils.openai_client.get_openai_client")
+    mock_client = mocker.Mock()
     mock_get_client.return_value = mock_client
-    mock_client.chat.completions.create.return_value = _mock_response("failure")
+    mock_client.chat.completions.create.return_value = _mock_response(
+        mocker, "failure"
+    )
 
     ok, msg = api_preset_controller.test_api_connection(
         "key", "endpoint", "model", 0.1, 10
@@ -76,8 +79,8 @@ def test_test_api_connection_unexpected_response(mock_get_client):
     assert "Risposta inattesa" in msg
 
 
-@patch("utils.openai_client.get_openai_client", return_value=None)
-def test_test_api_connection_no_client(mock_get_client):
+def test_test_api_connection_no_client(mocker):
+    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
     ok, msg = api_preset_controller.test_api_connection(
         "key", "endpoint", "model", 0.1, 10
     )

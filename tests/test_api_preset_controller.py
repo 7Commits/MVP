@@ -1,7 +1,5 @@
 import os
 import sys
-from unittest.mock import Mock, patch
-
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -9,46 +7,53 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from controllers import api_preset_controller as controller  # noqa: E402
 
 
-@patch("controllers.api_preset_controller.load_presets")
-def test_validate_preset_empty_name(mock_load):
+def test_validate_preset_empty_name(mocker):
+    mock_load = mocker.patch("controllers.api_preset_controller.load_presets")
     ok, msg = controller.validate_preset({"name": ""})
     assert ok is False
     assert "non può essere vuoto" in msg
     mock_load.assert_not_called()
 
 
-@patch("controllers.api_preset_controller.load_presets")
-def test_validate_preset_duplicate(mock_load):
+def test_validate_preset_duplicate(mocker):
+    mock_load = mocker.patch("controllers.api_preset_controller.load_presets")
     mock_load.return_value = pd.DataFrame({"id": ["1"], "name": ["A"]})
     ok, msg = controller.validate_preset({"name": "A"})
     assert ok is False
     assert "esiste già" in msg
 
 
-@patch("controllers.api_preset_controller.load_presets")
-def test_validate_preset_ok(mock_load):
+def test_validate_preset_ok(mocker):
+    mock_load = mocker.patch("controllers.api_preset_controller.load_presets")
     mock_load.return_value = pd.DataFrame({"id": ["1"], "name": ["A"]})
     ok, msg = controller.validate_preset({"name": "B"})
     assert ok is True
     assert msg == ""
 
 
-@patch("controllers.api_preset_controller.refresh_api_presets")
-@patch("controllers.api_preset_controller.APIPreset.save")
-@patch("controllers.api_preset_controller.load_presets")
-@patch("controllers.api_preset_controller.uuid.uuid4", return_value="new-id")
-def test_save_preset_new(mock_uuid, mock_load, mock_save, mock_refresh):
-    df = pd.DataFrame([
-        {
-            "id": "1",
-            "name": "Old",
-            "endpoint": "e",
-            "api_key": "k",
-            "model": "m",
-            "temperature": 0.0,
-            "max_tokens": 100,
-        }
-    ])
+def test_save_preset_new(mocker):
+    mock_uuid = mocker.patch(
+        "controllers.api_preset_controller.uuid.uuid4", return_value="new-id"
+    )
+    mock_load = mocker.patch("controllers.api_preset_controller.load_presets")
+    mock_save = mocker.patch("controllers.api_preset_controller.APIPreset.save")
+    mock_refresh = mocker.patch(
+        "controllers.api_preset_controller.refresh_api_presets"
+    )
+
+    df = pd.DataFrame(
+        [
+            {
+                "id": "1",
+                "name": "Old",
+                "endpoint": "e",
+                "api_key": "k",
+                "model": "m",
+                "temperature": 0.0,
+                "max_tokens": 100,
+            }
+        ]
+    )
     mock_load.return_value = df
     updated_df = pd.DataFrame([])
     mock_refresh.return_value = updated_df
@@ -73,21 +78,26 @@ def test_save_preset_new(mock_uuid, mock_load, mock_save, mock_refresh):
     assert any(p.name == "New" for p in saved_presets)
 
 
-@patch("controllers.api_preset_controller.refresh_api_presets")
-@patch("controllers.api_preset_controller.APIPreset.delete")
-@patch("controllers.api_preset_controller.load_presets")
-def test_delete_preset(mock_load, mock_delete, mock_refresh):
-    df = pd.DataFrame([
-        {
-            "id": "1",
-            "name": "Old",
-            "endpoint": "e",
-            "api_key": "k",
-            "model": "m",
-            "temperature": 0.0,
-            "max_tokens": 100,
-        }
-    ])
+def test_delete_preset(mocker):
+    mock_load = mocker.patch("controllers.api_preset_controller.load_presets")
+    mock_delete = mocker.patch("controllers.api_preset_controller.APIPreset.delete")
+    mock_refresh = mocker.patch(
+        "controllers.api_preset_controller.refresh_api_presets"
+    )
+
+    df = pd.DataFrame(
+        [
+            {
+                "id": "1",
+                "name": "Old",
+                "endpoint": "e",
+                "api_key": "k",
+                "model": "m",
+                "temperature": 0.0,
+                "max_tokens": 100,
+            }
+        ]
+    )
     mock_load.return_value = df
     updated_df = pd.DataFrame([])
     mock_refresh.return_value = updated_df
@@ -99,14 +109,14 @@ def test_delete_preset(mock_load, mock_delete, mock_refresh):
     mock_delete.assert_called_once_with("1")
 
 
-@patch("utils.openai_client.get_openai_client")
-def test_test_api_connection_delegates(mock_get_client):
-    mock_client = Mock()
+def test_test_api_connection_delegates(mocker):
+    mock_get_client = mocker.patch("utils.openai_client.get_openai_client")
+    mock_client = mocker.Mock()
     mock_get_client.return_value = mock_client
-    mock_choice = Mock()
-    mock_choice.message = Mock()
+    mock_choice = mocker.Mock()
+    mock_choice.message = mocker.Mock()
     mock_choice.message.content = "Connessione riuscita."
-    mock_resp = Mock()
+    mock_resp = mocker.Mock()
     mock_resp.choices = [mock_choice]
     mock_client.chat.completions.create.return_value = mock_resp
 
@@ -115,3 +125,4 @@ def test_test_api_connection_delegates(mock_get_client):
     assert ok is True
     assert "riuscita" in msg.lower()
     mock_get_client.assert_called_once_with(api_key="k", base_url="e")
+

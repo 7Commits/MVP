@@ -1,6 +1,5 @@
 import os
 import sys
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -14,19 +13,20 @@ data_dir = os.path.join(os.path.dirname(__file__), "sample_data")
 
 
 @pytest.mark.parametrize("filename", ["question_sets.json", "question_sets.csv"])
-@patch("controllers.question_controller.add_question_if_not_exists")
-@patch("models.question_set.QuestionSet.create")
-@patch("controllers.question_set_controller.load_sets")
-@patch("controllers.question_controller.load_questions")
-@patch("utils.cache.refresh_question_sets", return_value=pd.DataFrame())
-def test_import_from_file_handles_duplicates(
-    mock_refresh,
-    mock_load_questions,
-    mock_load_sets,
-    mock_create,
-    mock_add_question,
-    filename,
-):
+def test_import_from_file_handles_duplicates(mocker, filename):
+    mock_refresh = mocker.patch(
+        "utils.cache.refresh_question_sets", return_value=pd.DataFrame()
+    )
+    mock_load_questions = mocker.patch(
+        "controllers.question_controller.load_questions"
+    )
+    mock_load_sets = mocker.patch(
+        "controllers.question_set_controller.load_sets"
+    )
+    mock_create = mocker.patch("models.question_set.QuestionSet.create")
+    mock_add_question = mocker.patch(
+        "controllers.question_controller.add_question_if_not_exists"
+    )
     mock_load_questions.return_value = pd.DataFrame(
         {"id": ["q1"], "domanda": ["Existing"], "risposta_attesa": ["A1"], "categoria": ["cat1"]}
     )

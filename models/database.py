@@ -2,8 +2,11 @@ import logging
 import threading
 import configparser
 from pathlib import Path
+from typing import Mapping, Optional
+
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +18,8 @@ class DatabaseEngine:
     _instance_lock = threading.Lock()
 
     def __init__(self) -> None:
-        self._engine = None
-        self._session_factory = None
+        self._engine: Optional[Engine] = None
+        self._session_factory: Optional[sessionmaker] = None
         self._engine_lock = threading.Lock()
         self._session_lock = threading.Lock()
 
@@ -28,7 +31,7 @@ class DatabaseEngine:
                     cls._instance = cls()
         return cls._instance
 
-    def _load_config(self):
+    def _load_config(self) -> Mapping[str, str]:
         config = configparser.ConfigParser()
         root = Path(__file__).resolve().parent.parent
         cfg_path = root / "db.config"
@@ -37,7 +40,7 @@ class DatabaseEngine:
         config.read(cfg_path)
         return config["mysql"]
 
-    def _ensure_database(self, cfg):
+    def _ensure_database(self, cfg: Mapping[str, str]) -> None:
         """Crea il database di destinazione se non esiste già."""
         root_url = (
             f"mysql+pymysql://{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg.get('port', 3306)}"
@@ -54,11 +57,15 @@ class DatabaseEngine:
                 cfg.get("user"),
             )
             raise RuntimeError(
-                f"Impossibile creare il database '{cfg.get('database')}' sull'host '{cfg.get('host')}' per l'utente '{cfg.get('user')}'. "
-                "Il server del database potrebbe non essere raggiungibile, le credenziali potrebbero essere errate o l'utente potrebbe non avere privilegi sufficienti."
+                (
+                    f"Impossibile creare il database '{cfg.get('database')}' "
+                    f"sull'host '{cfg.get('host')}' per l'utente '{cfg.get('user')}'. "
+                    "Il server del database potrebbe non essere raggiungibile, le credenziali potrebbero essere errate "
+                    "o l'utente potrebbe non avere privilegi sufficienti."
+                )
             ) from exc
 
-    def get_engine(self):
+    def get_engine(self) -> Engine:
         if self._engine is None:
             with self._engine_lock:
                 if self._engine is None:
@@ -72,21 +79,25 @@ class DatabaseEngine:
                         pool_pre_ping=True,
                         pool_recycle=3600,
                     )
+        assert self._engine is not None
         return self._engine
 
-    def get_session(self):
+    def get_session(self) -> Session:
         if self._session_factory is None:
             with self._session_lock:
                 if self._session_factory is None:
                     engine = self.get_engine()
                     self._session_factory = sessionmaker(bind=engine)
+        assert self._session_factory is not None
         return self._session_factory()
 
-    def init_db(self):
+    def init_db(self) -> None:
         engine = self.get_engine()
         import models.orm_models  # noqa: F401
         Base.metadata.create_all(engine)
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """Base class per i modelli dichiarativi SQLAlchemy."""
+    pass
 
