@@ -1,6 +1,6 @@
-"""Expose controller utilities for external use."""
+"""Esporta le utilità dei controller per uso esterno."""
 
-# API preset management
+# Gestione dei preset API
 import logging
 
 from .api_preset_controller import (
@@ -8,84 +8,106 @@ from .api_preset_controller import (
     refresh_api_presets,
     list_presets,
     get_preset_by_id,
+    get_preset_by_name,
     validate_preset,
     save_preset,
     delete_preset,
     test_api_connection,
 )
 
-# Question CRUD
+# Operazioni CRUD sulle domande
 from .question_controller import (
     load_questions,
     refresh_questions,
     add_question,
     update_question,
     delete_question,
-    filter_questions_by_category,
-    import_questions_from_file,
+    get_filtered_questions,
+    save_question_action,
+    delete_question_action,
+    import_questions_action,
+    get_question_text,
+    get_question_category,
 )
 
-# Question set management
+# Gestione dei set di domande
 from .question_set_controller import (
     load_sets,
     refresh_question_sets,
     create_set,
     update_set,
     delete_set,
-    import_sets_from_file,
+    prepare_sets_for_view,
 )
 
-# Results and evaluation utilities
+# Risultati e utilità di valutazione
 from .test_controller import (
     load_results,
     refresh_results,
-    add_result,
-    save_results,
-    import_results_from_file,
-    calculate_statistics,
+    import_results_action,
+    generate_answer,
     evaluate_answer,
-    execute_llm_test,
+    run_test,
 )
 
-# Import helpers
+from .result_controller import (
+    get_results,
+    list_set_names,
+    list_model_names,
+    prepare_select_options,
+)
+
+from models.test_result import TestResult
+
+calculate_statistics = TestResult.calculate_statistics
+
+# Funzioni di avvio
 from .startup_controller import get_initial_state
 logger = logging.getLogger(__name__)
 
 
 __all__ = [
-    # API preset
+    # Preset API
     "load_presets",
     "refresh_api_presets",
     "list_presets",
     "get_preset_by_id",
+    "get_preset_by_name",
     "validate_preset",
     "save_preset",
     "delete_preset",
     "test_api_connection",
-    # Questions
+    # Domande
     "load_questions",
     "refresh_questions",
     "add_question",
     "update_question",
     "delete_question",
-    "filter_questions_by_category",
-    "import_questions_from_file",
-    # Question sets
+    "get_filtered_questions",
+    "save_question_action",
+    "delete_question_action",
+    "import_questions_action",
+    "get_question_text",
+    "get_question_category",
+    # Set di domande
     "load_sets",
     "refresh_question_sets",
     "create_set",
     "update_set",
     "delete_set",
-    "import_sets_from_file",
-    # Test results
+    "prepare_sets_for_view",
+    # Risultati dei test
     "load_results",
     "refresh_results",
-    "add_result",
-    "save_results",
-    "import_results_from_file",
-    "calculate_statistics",
+    "import_results_action",
+    "generate_answer",
     "evaluate_answer",
-    "execute_llm_test",
-    # Startup
+    "calculate_statistics",
+    "run_test",
+    "get_results",
+    "list_set_names",
+    "list_model_names",
+    "prepare_select_options",
+    # Avvio
     "get_initial_state",
 ]

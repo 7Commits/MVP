@@ -1,12 +1,15 @@
 import logging
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict, Any
 import uuid
+import pandas as pd
 from sqlalchemy import select, delete
 
 from models.database import DatabaseEngine
 from models.orm_models import QuestionORM, question_set_questions
+from utils.data_format_utils import format_questions_for_view
+from utils.file_reader_utils import read_questions, filter_new_rows
 logger = logging.getLogger(__name__)
 
 
@@ -81,3 +84,91 @@ class Question:
             if q:
                 session.delete(q)
             session.commit()
+
+    @staticmethod
+    def _persist_entities(df: pd.DataFrame) -> Tuple[int, List[str]]:
+        """Persiste nuove domande da ``df`` evitando duplicati.
+
+        Parametri
+        ---------
+        df: DataFrame
+            Dati delle domande normalizzati.
+
+        Restituisce
+        -----------
+        Tuple[int, list[str]]
+            Numero di domande importate ed elenco degli avvisi.
+        """
+
+        warnings: List[str] = []
+        with DatabaseEngine.instance().get_session() as session:
+            existing_ids = session.execute(select(QuestionORM.id)).scalars().all()
+
+            df_unique = df.drop_duplicates(subset="id", keep="first")
+            duplicated_ids = set(df["id"].astype(str)) - set(
+                df_unique["id"].astype(str)
+            )
+            for dup in duplicated_ids:
+                warnings.append(
+                    f"Domanda con ID '{dup}' già presente nel file; saltata."
+                )
+
+            new_rows, added_count = filter_new_rows(df_unique, existing_ids)
+            skipped_ids = set(df_unique["id"].astype(str)) - set(
+                new_rows["id"].astype(str)
+            )
+            for sid in skipped_ids:
+                warnings.append(
+                    f"Domanda con ID '{sid}' già esistente; saltata."
+                )
+
+            if added_count > 0:
+                session.bulk_insert_mappings(
+                    QuestionORM, new_rows.to_dict(orient="records")
+                )
+                session.commit()
+
+        return added_count, warnings
+
+    @staticmethod
+    def import_from_file(file) -> Dict[str, Any]:
+        """Importa domande da un file CSV o JSON.
+
+        Parametri
+        ---------
+        file: file-like
+            File contenente le domande da importare.
+
+        Restituisce
+        -----------
+        dict
+            ``{"success": bool, "imported_count": int, "warnings": list[str]}``
+        """
+
+        try:
+            df = read_questions(file)
+        except ValueError as exc:
+            return {"success": False, "imported_count": 0, "warnings": [str(exc)]}
+        except Exception as exc:  # pragma: no cover - defensive
+            return {
+                "success": False,
+                "imported_count": 0,
+                "warnings": [f"Errore durante la lettura del file: {exc}"],
+            }
+
+        imported, warnings = Question._persist_entities(df)
+
+        return {"success": True, "imported_count": imported, "warnings": warnings}
+
+    @staticmethod
+    def filter_by_category(
+        category: Optional[str] = None,
+    ) -> Tuple[pd.DataFrame, List[str]]:
+        """Restituisce le domande filtrate per categoria e tutte le categorie."""
+
+        from utils.cache import get_questions  # Import locale per evitare cicli
+        df = get_questions()
+        df, _, categories = format_questions_for_view(df)
+        filtered_df = df[df["categoria"] == category] if category else df
+
+        return filtered_df, categories

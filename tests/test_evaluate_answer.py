@@ -4,9 +4,11 @@ import os
 import sys
 from unittest.mock import Mock, patch
 
+import pytest
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from controllers import test_controller  # noqa: E402
+from controllers.test_controller import evaluate_answer  # noqa: E402
 
 
 def _mock_response(content: str):
@@ -24,7 +26,7 @@ def _mock_response_no_choices():
     return mock_resp
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_evaluate_answer_success(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
@@ -40,7 +42,7 @@ def test_evaluate_answer_success(mock_get_client):
         json.dumps(evaluation)
     )
 
-    result = test_controller.evaluate_answer(
+    result = evaluate_answer(
         "q", "expected", "actual", {"api_key": "key"}
     )
 
@@ -48,40 +50,36 @@ def test_evaluate_answer_success(mock_get_client):
     assert result["similarity"] == 90
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client", return_value=None)
+@patch("utils.openai_client.get_openai_client", return_value=None)
 def test_evaluate_answer_no_client(mock_get_client):
-    result = test_controller.evaluate_answer(
-        "q", "expected", "actual", {"api_key": None}
-    )
-
-    assert result["score"] == 0
-    assert "Client API" in result["explanation"]
+    with pytest.raises(ValueError):
+        evaluate_answer(
+            "q", "expected", "actual", {"api_key": None}
+        )
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_evaluate_answer_json_decode_error(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
     mock_client.chat.completions.create.return_value = _mock_response("not json")
 
-    result = test_controller.evaluate_answer(
-        "q", "expected", "actual", {"api_key": "key"}
-    )
-
-    assert result["score"] == 0
-    assert "Errore di decodifica JSON" in result["explanation"]
+    with pytest.raises(ValueError):
+        evaluate_answer(
+            "q", "expected", "actual", {"api_key": "key"}
+        )
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_evaluate_answer_no_choices(mock_get_client, caplog):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
     mock_client.chat.completions.create.return_value = _mock_response_no_choices()
 
     with caplog.at_level(logging.ERROR):
-        result = test_controller.evaluate_answer(
-            "q", "expected", "actual", {"api_key": "key"}
-        )
+        with pytest.raises(RuntimeError):
+            evaluate_answer(
+                "q", "expected", "actual", {"api_key": "key"}
+            )
 
-    assert result["score"] == 0
     assert "choices" in caplog.text

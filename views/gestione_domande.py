@@ -5,11 +5,11 @@ import pandas as pd
 
 from controllers import (
     add_question,
-    update_question,
-    delete_question,
-    filter_questions_by_category,
+    get_filtered_questions,
     load_questions,
-    import_questions_from_file,
+    save_question_action,
+    delete_question_action,
+    import_questions_action,
 )
 from views.style_utils import add_page_header
 from views.state_models import QuestionPageState
@@ -19,65 +19,58 @@ logger = logging.getLogger(__name__)
 # === FUNZIONI DI CALLBACK ===
 
 
-def save_question_action(
-    question_id, edited_question, edited_answer, edited_category
-) -> QuestionPageState:
-    """Salva le modifiche alla domanda e restituisce lo stato dell'operazione."""
-    state = QuestionPageState()
-    if update_question(
-        question_id,
-        domanda=edited_question,
-        risposta_attesa=edited_answer,
-        categoria=edited_category,
-    ):
-        state.save_success = True
-        st.session_state.questions = load_questions()
-        state.trigger_rerun = True
-    else:
-        state.save_error = True
-    return state
-
-
 def create_save_question_callback(
     question_id, edited_question, edited_answer, edited_category
 ):
     def callback():
-        st.session_state.question_page_state = save_question_action(
-            question_id, edited_question, edited_answer, edited_category
-        )
+        state = QuestionPageState()
+        try:
+            result = save_question_action(
+                question_id, edited_question, edited_answer, edited_category
+            )
+            if result["success"]:
+                state.save_success = True
+                state.save_success_message = "Domanda salvata."
+                st.session_state.questions = result["questions_df"]
+                state.trigger_rerun = True
+            else:
+                state.save_error = True
+                state.save_error_message = "Domanda non salvata."
+        except Exception as e:
+            state.save_error = True
+            state.save_error_message = f"Domanda non salvata: {e}"
+        st.session_state.question_page_state = state
 
     return callback
 
 
-def delete_question_action(question_id) -> QuestionPageState:
-    """Elimina la domanda e restituisce lo stato dell'operazione."""
-    state = QuestionPageState()
-    delete_question(question_id)
-    state.delete_success = True
-    st.session_state.questions = load_questions()
-    state.trigger_rerun = True
-    return state
-
-
-def import_questions_action(uploaded_file) -> QuestionPageState:
-    """Importa le domande da file e restituisce lo stato dell'operazione."""
-    state = QuestionPageState()
-    if uploaded_file is not None:
-        success, message = import_questions_from_file(uploaded_file)
-        if success:
-            state.import_success = True
-            state.import_success_message = message
-            st.session_state.questions = load_questions()
-            state.trigger_rerun = True
-        else:
-            state.import_error = True
-            state.import_error_message = message
-    return state
-
-
 def import_questions_callback():
     uploaded_file = st.session_state.get("uploaded_file_content")
-    st.session_state.question_page_state = import_questions_action(uploaded_file)
+    state = QuestionPageState()
+    try:
+        result = import_questions_action(uploaded_file)
+        st.session_state.questions = result["questions_df"]
+        count = result.get("imported_count", 0)
+        warnings = result.get("warnings", [])
+
+        if count > 0:
+            state.import_success = True
+            msg = f"Importate con successo {count} domande."
+            if warnings:
+                msg = f"{msg} Avvisi: {'; '.join(warnings)}"
+            state.import_success_message = msg
+        else:
+            state.import_error = True
+            msg = "Nessuna domanda importata."
+            if warnings:
+                msg = f"{msg} {'; '.join(warnings)}"
+            state.import_error_message = msg
+
+        state.trigger_rerun = True
+    except Exception as e:
+        state.import_error = True
+        state.import_error_message = str(e)
+    st.session_state.question_page_state = state
     st.session_state.upload_questions_file = None
     st.session_state.uploaded_file_content = None
 
@@ -95,7 +88,16 @@ def confirm_delete_question_dialog(question_id, question_text):
 
     with col1:
         if st.button("Sì, Elimina", type="primary", use_container_width=True):
-            st.session_state.question_page_state = delete_question_action(question_id)
+            state = QuestionPageState()
+            try:
+                questions = delete_question_action(question_id)
+                state.delete_success = True
+                st.session_state.questions = questions
+                state.trigger_rerun = True
+            except Exception as e:
+                state.save_error = True
+                state.save_error_message = str(e)
+            st.session_state.question_page_state = state
             st.rerun()
 
     with col2:
@@ -108,8 +110,9 @@ def render():
     st.session_state.setdefault("question_page_state", QuestionPageState())
     state: QuestionPageState = st.session_state.question_page_state
 
-    # Carica le domande utilizzando la cache
-    st.session_state.questions = load_questions()
+    # Carica le domande utilizzando la cache solo se non già presenti
+    if "questions" not in st.session_state:
+        st.session_state.questions = load_questions()
 
     # Gestisce la logica di rerun
     if state.trigger_rerun:
@@ -148,8 +151,8 @@ def render():
         st.header("Visualizza e Modifica Domande")
 
         if 'questions' in st.session_state and not st.session_state.questions.empty:
-            questions_df, unique_categories = filter_questions_by_category()
-            category_options = ["Tutte le categorie"] + unique_categories
+            _, categories = get_filtered_questions()
+            category_options = ["Tutte le categorie"] + categories
 
             selected_category = st.selectbox(
                 "Filtra per categoria:",
@@ -157,10 +160,8 @@ def render():
                 index=0
             )
 
-            if selected_category == "Tutte le categorie":
-                filtered_questions_df = questions_df
-            else:
-                filtered_questions_df, _ = filter_questions_by_category(selected_category)
+            filter_cat = None if selected_category == "Tutte le categorie" else selected_category
+            filtered_questions_df, _ = get_filtered_questions(filter_cat)
 
             if not filtered_questions_df.empty:
                 for idx, row in filtered_questions_df.iterrows():

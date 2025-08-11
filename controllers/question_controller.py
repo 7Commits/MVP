@@ -1,11 +1,7 @@
 """Controller per la gestione delle domande senza layer di service."""
 
 import logging
-from typing import Optional, Tuple, List
-
-import json
-import os
-import uuid
+from typing import Optional, Tuple, List, Dict, Any
 
 import pandas as pd
 
@@ -75,114 +71,94 @@ def delete_question(question_id: str) -> None:
     refresh_questions()
 
 
-def filter_questions_by_category(
-    category: Optional[str] = None,
-) -> Tuple[pd.DataFrame, List[str]]:
-    """Restituisce le domande filtrate per categoria e tutte le categorie."""
+def get_filtered_questions(category: Optional[str] = None) -> Tuple[pd.DataFrame, List[str]]:
+    """Restituisce il ``DataFrame`` filtrato e l'elenco delle categorie."""
+    return Question.filter_by_category(category)
 
-    df = load_questions()
 
-    if df.empty:
-        return df, []
+def save_question_action(
+    question_id: str, edited_question: str, edited_answer: str, edited_category: str
+) -> dict:
+    """Aggiorna una domanda e restituisce un dizionario con l'esito.
 
+    Restituisce
+    -----------
+    dict
+        ``{"success": bool, "questions_df": DataFrame | None}``
+
+    In caso di successo viene anche ricaricata la lista delle domande.
+    Eventuali errori sollevati da ``update_question`` vengono propagati.
+    """
+    success = update_question(
+        question_id,
+        domanda=edited_question,
+        risposta_attesa=edited_answer,
+        categoria=edited_category,
+    )
+    questions = refresh_questions() if success else None
+    return {"success": success, "questions_df": questions}
+
+
+def delete_question_action(question_id: str) -> pd.DataFrame:
+    """Elimina una domanda e restituisce il ``DataFrame`` aggiornato."""
+    delete_question(question_id)
+    questions = refresh_questions()
+    return questions
+
+
+def import_questions_action(uploaded_file) -> Dict[str, Any]:
+    """Importa domande da file e restituisce i risultati dell'operazione.
+
+    Parametri
+    ---------
+    uploaded_file: file-like
+        Il file caricato dall'utente.
+
+    Restituisce
+    -----------
+    dict
+        ``{"questions_df": DataFrame, "imported_count": int, "warnings": list[str]}``
+    """
+
+    if uploaded_file is None:
+        raise ValueError("Nessun file caricato.")
+
+    result = Question.import_from_file(uploaded_file)
+    if not result["success"]:
+        message = "; ".join(result.get("warnings", []))
+        raise ValueError(message)
+
+    questions = refresh_questions()
+    return {
+        "questions_df": questions,
+        "imported_count": result["imported_count"],
+        "warnings": result.get("warnings", []),
+    }
+
+
+def get_question_text(question_id: str, questions_df: Optional[pd.DataFrame] = None) -> str:
+    """Ritorna il testo della domanda dato il suo ID, ricaricando la cache se necessario."""
+    df = questions_df if questions_df is not None else load_questions()
+    if "domanda" not in df.columns:
+        df = refresh_questions()
+        if "domanda" not in df.columns:
+            return f"ID Domanda: {question_id} (colonna 'domanda' mancante)"
+    row = df[df["id"] == str(question_id)]
+    if not row.empty:
+        return row.iloc[0]["domanda"]
+    return f"ID Domanda: {question_id} (non trovata)"
+
+
+def get_question_category(
+    question_id: str, questions_df: Optional[pd.DataFrame] = None
+) -> str:
+    """Ritorna la categoria della domanda dato il suo ID, ricaricando la cache se necessario."""
+    df = questions_df if questions_df is not None else load_questions()
     if "categoria" not in df.columns:
-        df["categoria"] = ""
-    else:
-        df["categoria"] = df["categoria"].fillna("N/A")
-
-    categories = sorted(list(df["categoria"].astype(str).unique()))
-
-    if category:
-        filtered_df = df[df["categoria"] == category]
-    else:
-        filtered_df = df
-
-    return filtered_df, categories
-
-
-def import_questions_from_file(file) -> Tuple[bool, str]:
-    """Importa domande da un file CSV o JSON."""
-
-    def _import(file) -> Tuple[bool, str]:
-        try:
-            file_extension = os.path.splitext(file.name)[1].lower()
-            imported_df = None
-
-            if file_extension == ".csv":
-                try:
-                    imported_df = pd.read_csv(file)
-                except Exception:
-                    return False, "Il formato del file csv non è valido"
-            elif file_extension == ".json":
-                try:
-                    data = json.load(file)
-                except Exception:
-                    return False, "Il formato del file json non è valido"
-                if isinstance(data, list):
-                    imported_df = pd.DataFrame(data)
-                elif (
-                    isinstance(data, dict)
-                    and "questions" in data
-                    and isinstance(data["questions"], list)
-                ):
-                    imported_df = pd.DataFrame(data["questions"])
-                else:
-                    return False, (
-                        "Il file JSON deve essere una lista di domande o contenere la chiave 'questions'."
-                    )
-            else:
-                return False, "Formato file non supportato. Caricare un file CSV o JSON."
-
-            if imported_df is None or imported_df.empty:
-                return False, "Il file importato è vuoto o non contiene dati validi."
-
-            if "question" in imported_df.columns and "domanda" not in imported_df.columns:
-                imported_df.rename(columns={"question": "domanda"}, inplace=True)
-            if (
-                "expected_answer" in imported_df.columns
-                and "risposta_attesa" not in imported_df.columns
-            ):
-                imported_df.rename(
-                    columns={"expected_answer": "risposta_attesa"}, inplace=True
-                )
-
-            required_columns = ["domanda", "risposta_attesa"]
-            if not all(col in imported_df.columns for col in required_columns):
-                return (
-                    False,
-                    f"Il file importato deve contenere le colonne '{required_columns[0]}' "
-                    f"e '{required_columns[1]}'.",
-                )
-
-            if "id" not in imported_df.columns:
-                imported_df["id"] = [str(uuid.uuid4()) for _ in range(len(imported_df))]
-            else:
-                imported_df["id"] = imported_df["id"].astype(str)
-
-            if "categoria" not in imported_df.columns:
-                imported_df["categoria"] = ""
-            else:
-                imported_df["categoria"] = imported_df["categoria"].astype(str).fillna("")
-
-            imported_df["domanda"] = imported_df["domanda"].astype(str).fillna("")
-            imported_df["risposta_attesa"] = (
-                imported_df["risposta_attesa"].astype(str).fillna("")
-            )
-
-            final_imported_df = imported_df[["id", "domanda", "risposta_attesa", "categoria"]]
-
-            added_count = 0
-            for _, row in final_imported_df.iterrows():
-                Question.add(
-                    row["domanda"],
-                    row["risposta_attesa"],
-                    row["categoria"],
-                    question_id=row["id"],
-                )
-                added_count += 1
-            refresh_questions()
-            return True, f"Importate con successo {added_count} domande."
-        except Exception as e:  # pragma: no cover - errors should be rare and simple
-            return False, f"Errore durante l'importazione delle domande: {str(e)}"
-
-    return _import(file)
+        df = refresh_questions()
+        if "categoria" not in df.columns:
+            return f"ID Domanda: {question_id} (colonna 'categoria' mancante)"
+    row = df[df["id"] == str(question_id)]
+    if not row.empty:
+        return row.iloc[0]["categoria"]
+    return f"ID Domanda: {question_id} (non trovata)"

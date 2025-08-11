@@ -11,7 +11,7 @@ from controllers import (
     validate_preset,
     test_api_connection,
 )
-from controllers.openai_client import DEFAULT_MODEL, DEFAULT_ENDPOINT
+from utils.openai_client import DEFAULT_MODEL, DEFAULT_ENDPOINT
 
 logger = logging.getLogger(__name__)
 

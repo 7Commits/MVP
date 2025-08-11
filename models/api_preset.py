@@ -1,8 +1,7 @@
 import logging
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import List
-import pandas as pd
 from sqlalchemy import select
 
 from models.database import DatabaseEngine
@@ -40,27 +39,29 @@ class APIPreset:
             ]
 
     @staticmethod
-    def save_df(df: pd.DataFrame) -> None:
+    def save(presets: List["APIPreset"]) -> None:
+        """Salva un elenco di preset API."""
         with DatabaseEngine.instance().get_session() as session:
             existing_ids = session.execute(select(APIPresetORM.id)).scalars().all()
-            incoming_ids = df['id'].astype(str).tolist()
+            incoming_ids = [p.id for p in presets]
+
             for del_id in set(existing_ids) - set(incoming_ids):
                 obj = session.get(APIPresetORM, del_id)
                 if obj:
                     session.delete(obj)
-            for _, row in df.iterrows():
-                params = {k: (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
-                obj = session.get(APIPresetORM, params['id'])
+
+            for preset in presets:
+                obj = session.get(APIPresetORM, preset.id)
                 if obj:
-                    obj.name = params['name']
-                    obj.provider_name = params['provider_name']
-                    obj.endpoint = params['endpoint']
-                    obj.api_key = params['api_key']
-                    obj.model = params['model']
-                    obj.temperature = params['temperature']
-                    obj.max_tokens = params['max_tokens']
+                    obj.name = preset.name
+                    obj.provider_name = preset.provider_name
+                    obj.endpoint = preset.endpoint
+                    obj.api_key = preset.api_key
+                    obj.model = preset.model
+                    obj.temperature = preset.temperature
+                    obj.max_tokens = preset.max_tokens
                 else:
-                    session.add(APIPresetORM(**params))
+                    session.add(APIPresetORM(**asdict(preset)))
             session.commit()
 
     @staticmethod

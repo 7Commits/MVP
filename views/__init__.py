@@ -1,4 +1,4 @@
-"""Views package."""
+"""Pacchetto delle viste."""
 
 import logging
 logger = logging.getLogger(__name__)

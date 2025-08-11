@@ -1,0 +1,8 @@
+[
+  {"name": "Set1", "questions": []},
+  {"name": "Set2", "questions": [
+      {"id": "q1"},
+      {"id": "q2", "domanda": "New question?", "risposta_attesa": "Answer2", "categoria": "cat2"},
+      {"domanda": "No ID question?", "risposta_attesa": "No ID answer", "categoria": "cat3"}
+  ]}
+]

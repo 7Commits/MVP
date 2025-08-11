@@ -2,199 +2,156 @@
 
 from __future__ import annotations
 
-import logging
 import json
-import uuid
+import logging
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import pandas as pd
 from openai import APIConnectionError, APIStatusError, RateLimitError
 
-from models.question import Question
 from models.test_result import TestResult
-from . import openai_client
-from utils.cache import (
-    get_results as _get_results,
-    refresh_results as _refresh_results,
-)
+from models.question import Question
+from utils import openai_client
+
+DEFAULT_MODEL = openai_client.DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
 
 def load_results() -> pd.DataFrame:
     """Restituisce i risultati dei test utilizzando la cache."""
-
-    return _get_results()
+    return TestResult.load_all_df()
 
 
 def refresh_results() -> pd.DataFrame:
     """Svuota e ricarica la cache dei risultati dei test."""
-
-    return _refresh_results()
-
-
-def add_result(set_id: str, results_data: Dict) -> str:
-    """Aggiunge un nuovo risultato di test e aggiorna la cache."""
-
-    rid = TestResult.add(set_id, results_data)
-    refresh_results()
-    return rid
+    return TestResult.refresh_cache()
 
 
-def save_results(df: pd.DataFrame) -> None:
-    """Salva il DataFrame dei risultati e aggiorna la cache."""
+def import_results_action(uploaded_file) -> Tuple[pd.DataFrame, str]:
+    """Importa risultati da ``uploaded_file`` e restituisce il DataFrame aggiornato.
 
-    TestResult.save_df(df)
-    refresh_results()
+    Parametri
+    ---------
+    uploaded_file: Oggetto tipo file caricato contenente i risultati.
 
+    Restituisce
+    -----------
+    Tuple[pd.DataFrame, str]
+        Il DataFrame aggiornato dei risultati e un messaggio descrittivo.
 
-def import_results_from_file(file) -> Tuple[bool, str]:
-    """Importa risultati di test da un file JSON."""
+    Eccezioni
+    ---------
+    ValueError
+        Se il file non è presente o contiene dati non validi.
+    """
 
-    try:
-        data = json.load(file)
-        if isinstance(data, dict):
-            data = [data]
-        if not isinstance(data, list):
-            return False, "Il file JSON deve contenere un oggetto o una lista di risultati."
+    if uploaded_file is None:
+        raise ValueError("Nessun file caricato.")
 
-        results_df = load_results()
-        added_count = 0
+    success, message = TestResult.import_from_file(uploaded_file)
+    if not success:
+        raise ValueError(message)
 
-        for item in data:
-            if not isinstance(item, dict):
-                continue
-
-            result_id = str(item.get("id", uuid.uuid4()))
-            if result_id in results_df["id"].astype(str).values:
-                continue
-
-            set_id = str(item.get("set_id", ""))
-            timestamp = str(
-                item.get(
-                    "timestamp",
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                )
-            )
-            results_content = item.get("results", {})
-
-            new_row = {
-                "id": result_id,
-                "set_id": set_id,
-                "timestamp": timestamp,
-                "results": results_content if isinstance(results_content, dict) else {},
-            }
-
-            results_df = pd.concat(
-                [results_df, pd.DataFrame([new_row])], ignore_index=True
-            )
-            added_count += 1
-
-        if added_count > 0:
-            save_results(results_df)
-            message = f"Importati {added_count} risultati."
-        else:
-            message = "Nessun nuovo risultato importato."
-
-        return True, message
-    except Exception as e:  # noqa: BLE001
-        return False, f"Errore durante l'importazione dei risultati: {str(e)}"
+    results = load_results()
+    return results, message
 
 
-def calculate_statistics(questions_results: Dict[str, Dict]) -> Dict:
-    """Calcola statistiche dai risultati grezzi delle domande."""
+def generate_answer(question: str, client_config: Dict[str, Any]) -> str:
+    """Genera una risposta per ``question`` utilizzando la configurazione LLM fornita.
 
-    if not questions_results:
-        return {
-            "avg_score": 0,
-            "per_question_scores": [],
-            "radar_metrics": {
-                "similarity": 0,
-                "correctness": 0,
-                "completeness": 0,
-            },
-        }
-
-    per_question_scores: List[Dict] = []
-    radar_sums = {"similarity": 0, "correctness": 0, "completeness": 0}
-
-    for qid, qdata in questions_results.items():
-        evaluation = qdata.get("evaluation", {})
-        score = evaluation.get("score", 0)
-        per_question_scores.append(
-            {"question": qdata.get("question", f"Domanda {qid}"), "score": score}
-        )
-        for metric in radar_sums.keys():
-            radar_sums[metric] += evaluation.get(metric, 0)
-
-    count = len(per_question_scores)
-    avg_score = (
-        sum(item["score"] for item in per_question_scores) / count if count > 0 else 0
-    )
-    radar_metrics = {
-        metric: radar_sums[metric] / count if count > 0 else 0
-        for metric in radar_sums
-    }
-
-    return {
-        "avg_score": avg_score,
-        "per_question_scores": per_question_scores,
-        "radar_metrics": radar_metrics,
-    }
-
-
-def evaluate_answer(
-    question: str,
-    expected_answer: str,
-    actual_answer: str,
-    client_config: dict,
-):
-    """Valuta una risposta utilizzando un LLM specificato tramite client_config."""
+    Restituisce solo la risposta generata. In caso di errore viene sollevata
+    un'eccezione.
+    """
 
     client = openai_client.get_openai_client(
         api_key=client_config.get("api_key"),
         base_url=client_config.get("endpoint"),
     )
     if not client:
-        return {
-            "score": 0,
-            "explanation": "Errore: Client API per la valutazione non configurato.",
-            "similarity": 0,
-            "correctness": 0,
-            "completeness": 0,
-        }
+        logger.error("Client API per la generazione risposte non configurato.")
+        raise ValueError("Client API non configurato")
+
+    if question is None or not isinstance(question, str) or question.strip() == "":
+        logger.error("La domanda fornita è vuota o non valida.")
+        raise ValueError("Domanda vuota o non valida")
+
+    prompt = f"Rispondi alla seguente domanda in modo conciso e accurato: {question}"
+    api_request_details = {
+        "model": client_config.get("model", DEFAULT_MODEL),
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": client_config.get("temperature", 0.7),
+        "max_tokens": client_config.get("max_tokens", 500),
+    }
+
+    try:
+        response = client.chat.completions.create(**api_request_details)
+        choices = getattr(response, "choices", None)
+        if not choices or not choices[0].message.content:
+            raise RuntimeError("Risposta API non valida")
+        return choices[0].message.content.strip()
+    except (APIConnectionError, RateLimitError, APIStatusError) as e:
+        logger.error(
+            f"Errore API durante la generazione della risposta di esempio: {type(e).__name__} - {e}"
+        )
+        raise RuntimeError(str(e)) from e
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            f"Errore imprevisto durante la generazione della risposta: {type(exc).__name__} - {exc}"
+        )
+        raise RuntimeError(str(exc)) from exc
+
+
+def evaluate_answer(
+    question: str,
+    expected_answer: str,
+    actual_answer: str,
+    client_config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Valuta ``actual_answer`` rispetto a ``expected_answer`` utilizzando un LLM.
+
+    Restituisce i dati di valutazione come dizionario oppure solleva
+    un'eccezione in caso di errore.
+    """
+
+    client = openai_client.get_openai_client(
+        api_key=client_config.get("api_key"),
+        base_url=client_config.get("endpoint"),
+    )
+    if not client:
+        raise ValueError("Errore: Client API per la valutazione non configurato.")
 
     prompt = f"""
-        Sei un valutatore esperto che valuta la qualità delle risposte alle domande.
-        Domanda: {question}
-        Risposta Attesa: {expected_answer}
-        Risposta Effettiva: {actual_answer}
+    Sei un valutatore esperto che valuta la qualità delle risposte alle domande.
+    Domanda: {question}
+    Risposta Attesa: {expected_answer}
+    Risposta Effettiva: {actual_answer}
 
-        Valuta la risposta effettiva rispetto alla risposta attesa in base a:
-        1. Somiglianza (0-100): Quanto è semanticamente simile la risposta effettiva a quella attesa?
-        2. Correttezza (0-100): Le informazioni nella risposta effettiva sono fattualmente corrette?
-        3. Completezza (0-100): La risposta effettiva contiene tutti i punti chiave della risposta attesa?
-        Calcola un punteggio complessivo (0-100) basato su queste metriche.
-        Fornisci una breve spiegazione della tua valutazione (max 100 parole).
-        Formatta la tua risposta come un oggetto JSON con questi campi:
-        - score: il punteggio complessivo (numero)
-        - explanation: la tua spiegazione (stringa)
-        - similarity: punteggio di somiglianza (numero)
-        - correctness: punteggio di correttezza (numero)
-        - completeness: punteggio di completezza (numero)
-        Esempio di risposta JSON:
-        {{
-            "score": 95,
-            "explanation": "La risposta è corretta e completa",
-            "similarity": 90,
-            "correctness": 100,
-            "completeness": 95
-        }}
+    Valuta la risposta effettiva rispetto alla risposta attesa in base a:
+    1. Somiglianza (0-100): Quanto è semanticamente simile la risposta effettiva a quella attesa?
+    2. Correttezza (0-100): Le informazioni nella risposta effettiva sono fattualmente corrette?
+    3. Completezza (0-100): La risposta effettiva contiene tutti i punti chiave della risposta attesa?
+    Calcola un punteggio complessivo (0-100) basato su queste metriche.
+    Fornisci una breve spiegazione della tua valutazione (max 100 parole).
+    Formatta la tua risposta come un oggetto JSON con questi campi:
+    - score: il punteggio complessivo (numero)
+    - explanation: la tua spiegazione (stringa)
+    - similarity: punteggio di somiglianza (numero)
+    - correctness: punteggio di correttezza (numero)
+    - completeness: punteggio di completezza (numero)
+    Esempio di risposta JSON:
+    {{
+        "score": 95,
+        "explanation": "La risposta è corretta e completa",
+        "similarity": 90,
+        "correctness": 100,
+        "completeness": 95
+    }}
     """
 
     api_request_details = {
-        "model": client_config.get("model", openai_client.DEFAULT_MODEL),
+        "model": client_config.get("model", DEFAULT_MODEL),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": client_config.get("temperature", 0.0),
         "max_tokens": client_config.get("max_tokens", 250),
@@ -204,213 +161,127 @@ def evaluate_answer(
     try:
         response = client.chat.completions.create(**api_request_details)
         choices = getattr(response, "choices", None)
-        if not choices:
+        if not choices or not choices[0].message.content:
             logger.error("Risposta API priva di 'choices' validi")
-            return {
-                "score": 0,
-                "explanation": "Errore: risposta API non valida.",
-                "similarity": 0,
-                "correctness": 0,
-                "completeness": 0,
-            }
-        content = choices[0].message.content or "{}"
-        try:
-            evaluation = json.loads(content)
-            required_keys = [
-                "score",
-                "explanation",
-                "similarity",
-                "correctness",
-                "completeness",
-            ]
-            if not all(key in evaluation for key in required_keys):
-                logger.warning(
-                    f"Risposta JSON dalla valutazione LLM incompleta: {content}. Verranno usati valori di default."
-                )
-                for key in required_keys:
-                    if key not in evaluation:
-                        evaluation[key] = (
-                            0
-                            if key != "explanation"
-                            else "Valutazione incompleta o formato JSON non corretto."
-                        )
-            return evaluation
-        except json.JSONDecodeError:
-            logger.error(
-                f"Errore: Impossibile decodificare la risposta JSON dalla valutazione LLM: {content}"
-            )
-            return {
-                "score": 0,
-                "explanation": f"Errore di decodifica JSON: {content[:100]}...",
-                "similarity": 0,
-                "correctness": 0,
-                "completeness": 0,
-            }
-
+            raise RuntimeError("Risposta API non valida.")
+        content = choices[0].message.content
+        evaluation = json.loads(content)
+        required_keys = [
+            "score",
+            "explanation",
+            "similarity",
+            "correctness",
+            "completeness",
+        ]
+        if not all(key in evaluation for key in required_keys):
+            raise ValueError(f"Risposta JSON incompleta: {content}")
+        return evaluation
+    except json.JSONDecodeError as e:
+        logger.error(
+            f"Errore: Impossibile decodificare la risposta JSON dalla valutazione LLM: {content}"
+        )
+        raise ValueError(f"Errore di decodifica JSON: {content[:100]}...") from e
     except (APIConnectionError, RateLimitError, APIStatusError) as e:
         logger.error(f"Errore API durante la valutazione: {type(e).__name__} - {e}")
-        return {
-            "score": 0,
-            "explanation": f"Errore API: {type(e).__name__}",
-            "similarity": 0,
-            "correctness": 0,
-            "completeness": 0,
-        }
+        raise RuntimeError(str(e)) from e
     except Exception as exc:  # noqa: BLE001
         logger.error(
             f"Errore imprevisto durante la valutazione: {type(exc).__name__} - {exc}"
         )
-        return {
-            "score": 0,
-            "explanation": f"Errore imprevisto: {type(exc).__name__}",
-            "similarity": 0,
-            "correctness": 0,
-            "completeness": 0,
-        }
+        raise RuntimeError(str(exc)) from exc
 
 
-def generate_example_answer_with_llm(
-    question: str, client_config: dict
-):
-    """Genera una risposta di esempio per una domanda utilizzando un LLM."""
-
-    client = openai_client.get_openai_client(
-        api_key=client_config.get("api_key"),
-        base_url=client_config.get("endpoint"),
-    )
-    if not client:
-        logger.error("Client API per la generazione risposte non configurato.")
-        return {"answer": None, "error": "Client API non configurato"}
-
-    if question is None or not isinstance(question, str) or question.strip() == "":
-        logger.error("La domanda fornita è vuota o non valida.")
-        return {"answer": None, "error": "Domanda vuota o non valida"}
-
-    prompt = f"Rispondi alla seguente domanda in modo conciso e accurato: {question}"
-
-    api_request_details = {
-        "model": client_config.get("model", openai_client.DEFAULT_MODEL),
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": client_config.get("temperature", 0.7),
-        "max_tokens": client_config.get("max_tokens", 500),
-    }
-
-    try:
-        response = client.chat.completions.create(**api_request_details)
-        answer = (
-            response.choices[0].message.content.strip()
-            if response.choices and response.choices[0].message.content
-            else None
-        )
-        return {"answer": answer}
-
-    except (APIConnectionError, RateLimitError, APIStatusError) as e:
-        logger.error(
-            f"Errore API durante la generazione della risposta di esempio: {type(e).__name__} - {e}"
-        )
-        return {"answer": None, "error": str(e)}
-    except Exception as exc:  # noqa: BLE001
-        logger.error(
-            f"Errore imprevisto durante la generazione della risposta: {type(exc).__name__} - {exc}"
-        )
-        return {"answer": None, "error": str(exc)}
-
-
-def execute_llm_test(
+def run_test(
     set_id: str,
     set_name: str,
     question_ids: List[str],
     gen_preset_config: Dict,
     eval_preset_config: Dict,
 ) -> Dict:
-    """Esegue la generazione e valutazione delle risposte tramite LLM."""
+    """Esegue un test generando e valutando risposte con LLM."""
 
-    questions = [
-        {"id": q.id, "question": q.domanda, "expected_answer": q.risposta_attesa}
-        for q in Question.load_all()
-    ]
-    questions_df = pd.DataFrame(questions)
+    try:
+        questions_map = {str(q.id): q for q in Question.load_all()}
+        results: Dict[str, Dict[str, Any]] = {}
 
-    def get_question_data(qid: str):
-        row = questions_df[questions_df["id"] == str(qid)]
-        if row.empty:
-            return None
-        question = row.iloc[0].get("question", "")
-        expected = row.iloc[0].get("expected_answer", "")
-        if not question or not isinstance(question, str) or question.strip() == "":
-            return None
-        if not expected or not isinstance(expected, str) or expected.strip() == "":
-            expected = "Risposta non disponibile"
-        return {"question": question, "expected_answer": expected}
+        for q_id in question_ids:
+            q_obj = questions_map.get(str(q_id))
+            if not q_obj:
+                continue
+            question = q_obj.domanda or ""
+            if not question.strip():
+                continue
+            expected = q_obj.risposta_attesa or "Risposta non disponibile"
 
-    results: Dict = {}
-    for q_id in question_ids:
-        q_data = get_question_data(q_id)
-        if not q_data:
-            continue
-        generation_output = generate_example_answer_with_llm(
-            q_data["question"],
-            client_config=gen_preset_config,
-        )
-        actual_answer = generation_output.get("answer")
+            try:
+                actual_answer = generate_answer(question, gen_preset_config)
+            except Exception as e:  # noqa: BLE001
+                error_msg = str(e)
+                evaluation = {
+                    "score": 0,
+                    "explanation": error_msg,
+                    "similarity": 0,
+                    "correctness": 0,
+                    "completeness": 0,
+                }
+                actual_answer = error_msg
+            else:
+                try:
+                    evaluation = evaluate_answer(
+                        question, expected, actual_answer, eval_preset_config
+                    )
+                except Exception as e:  # noqa: BLE001
+                    error_msg = str(e)
+                    evaluation = {
+                        "score": 0,
+                        "explanation": error_msg,
+                        "similarity": 0,
+                        "correctness": 0,
+                        "completeness": 0,
+                    }
 
-        if actual_answer is None:
-            error_msg = generation_output.get("error", "Generazione fallita")
-            results[q_id] = {
-                "question": q_data["question"],
-                "expected_answer": q_data["expected_answer"],
-                "actual_answer": error_msg,
-                "evaluation": {"score": 0, "explanation": error_msg},
+            results[str(q_id)] = {
+                "question": question,
+                "expected_answer": expected,
+                "actual_answer": actual_answer,
+                "evaluation": evaluation,
             }
-            continue
 
-        evaluation = evaluate_answer(
-            q_data["question"],
-            q_data["expected_answer"],
-            actual_answer,
-            client_config=eval_preset_config,
-        )
-        results[q_id] = {
-            "question": q_data["question"],
-            "expected_answer": q_data["expected_answer"],
-            "actual_answer": actual_answer,
-            "evaluation": evaluation,
+        stats = TestResult.calculate_statistics(results)
+        result_data = {
+            "set_name": set_name,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "avg_score": stats["avg_score"],
+            "sample_type": "Generata da LLM",
+            "method": "LLM",
+            "generation_llm": gen_preset_config.get("model"),
+            "evaluation_llm": eval_preset_config.get("model"),
+            "questions": results,
+            "per_question_scores": stats["per_question_scores"],
+            "radar_metrics": stats["radar_metrics"],
         }
 
-    if not results:
+        result_id = TestResult.add_and_refresh(set_id, result_data)
+        return {
+            "result_id": result_id,
+            "avg_score": stats["avg_score"],
+            "results": results,
+            "per_question_scores": stats["per_question_scores"],
+            "radar_metrics": stats["radar_metrics"],
+            "results_df": TestResult.load_all_df(),
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            f"Errore durante l'esecuzione del test LLM: {type(exc).__name__} - {exc}"
+        )
         return {}
-
-    avg_score = sum(r["evaluation"]["score"] for r in results.values()) / len(results)
-    result_data = {
-        "set_name": set_name,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "avg_score": avg_score,
-        "sample_type": "Generata da LLM",
-        "method": "LLM",
-        "generation_llm": gen_preset_config.get("model"),
-        "evaluation_llm": eval_preset_config.get("model"),
-        "questions": results,
-    }
-
-    result_id = add_result(set_id, result_data)
-    results_df = load_results()
-
-    return {
-        "result_id": result_id,
-        "avg_score": avg_score,
-        "results": results,
-        "results_df": results_df,
-    }
 
 
 __all__ = [
     "load_results",
     "refresh_results",
-    "add_result",
-    "save_results",
-    "import_results_from_file",
-    "calculate_statistics",
+    "import_results_action",
+    "generate_answer",
     "evaluate_answer",
-    "generate_example_answer_with_llm",
-    "execute_llm_test",
+    "run_test",
 ]

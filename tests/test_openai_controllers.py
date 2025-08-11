@@ -2,10 +2,13 @@ import os
 import sys
 from unittest.mock import Mock, patch
 
+import pytest
+
 # Aggiunge la cartella principale al percorso dei moduli per i test
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from controllers import api_preset_controller, test_controller  # noqa: E402
+from controllers import api_preset_controller  # noqa: E402
+from controllers.test_controller import generate_answer  # noqa: E402
 
 
 def _mock_response(content: str):
@@ -18,42 +21,32 @@ def _mock_response(content: str):
     return mock_resp
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client")
-def test_generate_example_answer_success(mock_get_client):
+@patch("utils.openai_client.get_openai_client")
+def test_generate_answer_success(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
     mock_client.chat.completions.create.return_value = _mock_response(" answer ")
 
-    result = test_controller.generate_example_answer_with_llm(
-        "question", {"api_key": "key"}
-    )
+    result = generate_answer("question", {"api_key": "key"})
 
-    assert result["answer"] == "answer"
+    assert result == "answer"
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client", return_value=None)
-def test_generate_example_answer_no_client(mock_get_client):
-    result = test_controller.generate_example_answer_with_llm(
-        "question", {"api_key": None}
-    )
-
-    assert result["answer"] is None
-    assert result["error"] == "Client API non configurato"
+@patch("utils.openai_client.get_openai_client", return_value=None)
+def test_generate_answer_no_client(mock_get_client):
+    with pytest.raises(ValueError):
+        generate_answer("question", {"api_key": None})
 
 
-@patch("controllers.test_controller.openai_client.get_openai_client")
-def test_generate_example_answer_empty_question(mock_get_client):
+@patch("utils.openai_client.get_openai_client")
+def test_generate_answer_empty_question(mock_get_client):
     mock_get_client.return_value = Mock()
 
-    result = test_controller.generate_example_answer_with_llm(
-        "", {"api_key": "key"}
-    )
-
-    assert result["answer"] is None
-    assert result["error"] == "Domanda vuota o non valida"
+    with pytest.raises(ValueError):
+        generate_answer("", {"api_key": "key"})
 
 
-@patch("controllers.api_preset_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_test_api_connection_success(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
@@ -69,7 +62,7 @@ def test_test_api_connection_success(mock_get_client):
     assert msg == "Connessione API riuscita!"
 
 
-@patch("controllers.api_preset_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_test_api_connection_unexpected_response(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
@@ -83,7 +76,7 @@ def test_test_api_connection_unexpected_response(mock_get_client):
     assert "Risposta inattesa" in msg
 
 
-@patch("controllers.api_preset_controller.openai_client.get_openai_client", return_value=None)
+@patch("utils.openai_client.get_openai_client", return_value=None)
 def test_test_api_connection_no_client(mock_get_client):
     ok, msg = api_preset_controller.test_api_connection(
         "key", "endpoint", "model", 0.1, 10

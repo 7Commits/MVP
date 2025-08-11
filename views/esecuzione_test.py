@@ -2,7 +2,7 @@ import logging
 
 import streamlit as st
 
-from controllers import execute_llm_test, load_sets, load_presets
+from controllers import run_test, load_sets, load_presets, get_preset_by_name
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 
@@ -84,14 +84,7 @@ def render():
     # --- Opzioni API basate su Preset ---
     add_section_title("Opzioni API basate su Preset", icon="🛠️")
 
-    preset_names_to_id = {preset['name']: preset['id'] for _, preset in st.session_state.api_presets.iterrows()}
-    preset_display_names = list(preset_names_to_id.keys())
-
-    def get_preset_config_by_name(name):
-        preset_id = preset_names_to_id.get(name)
-        if preset_id:
-            return st.session_state.api_presets[st.session_state.api_presets["id"] == preset_id].iloc[0].to_dict()
-        return None
+    preset_display_names = list(st.session_state.api_presets["name"])
 
     # Seleziona preset per generazione risposta (comune a entrambe le modalità)
     generation_preset_name = st.selectbox(
@@ -131,14 +124,20 @@ def render():
         if st.session_state.run_llm_test:
             st.session_state.run_llm_test = False  # Resetta lo stato
 
-            gen_preset_config = get_preset_config_by_name(st.session_state.selected_generation_preset_name)
-            eval_preset_config = get_preset_config_by_name(st.session_state.selected_evaluation_preset_name)
+            gen_preset_config = get_preset_by_name(
+                st.session_state.selected_generation_preset_name,
+                st.session_state.api_presets,
+            )
+            eval_preset_config = get_preset_by_name(
+                st.session_state.selected_evaluation_preset_name,
+                st.session_state.api_presets,
+            )
 
             if not gen_preset_config or not eval_preset_config:
                 st.error("Assicurati di aver selezionato preset validi per generazione e valutazione.")
             else:
                 with st.spinner("Generazione risposte e valutazione LLM in corso..."):
-                    exec_result = execute_llm_test(
+                    exec_result = run_test(
                         selected_set_id,
                         selected_set['name'],
                         questions_in_set,

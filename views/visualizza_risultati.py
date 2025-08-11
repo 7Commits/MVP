@@ -7,12 +7,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from controllers import (
-    import_results_from_file,
-    load_results,
-    refresh_results,
+    import_results_action,
     calculate_statistics,
     load_sets,
-    load_presets,
+    get_results,
+    list_set_names,
+    list_model_names,
+    prepare_select_options,
 )
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ def render():
 
     # Carica i risultati utilizzando la cache
     if 'results' not in st.session_state:
-        st.session_state.results = load_results()
+        st.session_state.results = get_results(None, None)
     if st.session_state.results.empty:
         st.warning("Nessun risultato di test disponibile. Esegui prima alcuni test dalla pagina 'Esecuzione Test'.")
         st.stop()
@@ -35,10 +36,6 @@ def render():
     # Carica i set di domande utilizzando la cache
     if 'question_sets' not in st.session_state:
         st.session_state.question_sets = load_sets()
-
-    # Carica i preset API utilizzando la cache
-    if 'api_presets' not in st.session_state:
-        st.session_state.api_presets = load_presets()
 
     # Stato per messaggi di importazione risultati
     if 'import_results_success' not in st.session_state:
@@ -55,41 +52,30 @@ def render():
         st.error(st.session_state.import_results_message)
         st.session_state.import_results_error = False
 
-    def get_set_name(set_id):
-        if not st.session_state.question_sets.empty:
-            set_info = st.session_state.question_sets[st.session_state.question_sets['id'] == str(set_id)]
-            if not set_info.empty:
-                return set_info.iloc[0]['name']
-        return "Set Sconosciuto"
-
-    def get_model_from_preset_name(preset_name):
-        """Restituisce il modello associato a un preset, se disponibile."""
-        if 'api_presets' in st.session_state and not st.session_state.api_presets.empty:
-            preset_row = st.session_state.api_presets[st.session_state.api_presets['name'] == str(preset_name)]
-            if not preset_row.empty:
-                return preset_row.iloc[0]['model']
-        return "Sconosciuto"
-
     def import_results_callback():
         """Callback per importare risultati da file JSON."""
-        if 'uploaded_results_file' in st.session_state and st.session_state.uploaded_results_file is not None:
-            success, message = import_results_from_file(st.session_state.uploaded_results_file)
-            st.session_state.import_results_message = message
-            st.session_state.import_results_success = success
-            st.session_state.import_results_error = not success
-            if success:
-                st.session_state.results = refresh_results()
+        if (
+            'uploaded_results_file' in st.session_state
+            and st.session_state.uploaded_results_file is not None
+        ):
+            try:
+                results_df, message = import_results_action(
+                    st.session_state.uploaded_results_file
+                )
+                st.session_state.import_results_message = message
+                st.session_state.import_results_success = True
+                st.session_state.import_results_error = False
+                st.session_state.results = results_df
+            except Exception as exc:  # noqa: BLE001
+                st.session_state.import_results_message = str(exc)
+                st.session_state.import_results_success = False
+                st.session_state.import_results_error = True
         st.session_state.uploaded_results_file = None
         st.session_state.upload_results = None
 
     # Filtri per Set e Modello LLM
-    all_set_names = sorted({get_set_name(r['set_id']) for _, r in st.session_state.results.iterrows()})
-
-    all_model_names = sorted({
-        r['results']['generation_llm']
-        for _, r in st.session_state.results.iterrows()
-        if r['results'].get('generation_llm')
-    })
+    all_set_names = list_set_names(st.session_state.results, st.session_state.question_sets)
+    all_model_names = list_model_names(st.session_state.results)
 
     selected_set_filter = st.selectbox(
         "Filtra per Set",
@@ -105,47 +91,14 @@ def render():
         key="filter_model_name"
     )
 
-    filtered_results_df = st.session_state.results
-    if selected_set_filter != "Tutti":
-        set_ids = st.session_state.question_sets[
-            st.session_state.question_sets['name'] == selected_set_filter
-        ]['id'].astype(str)
-        filtered_results_df = filtered_results_df[
-            filtered_results_df['set_id'].astype(str).isin(set_ids)
-        ]
+    filtered_results_df = get_results(
+        None if selected_set_filter == "Tutti" else selected_set_filter,
+        None if selected_model_filter == "Tutti" else selected_model_filter,
+    )
 
-    if selected_model_filter != "Tutti":
-        filtered_results_df = filtered_results_df[
-            filtered_results_df['results'].apply(
-                lambda res: res.get('generation_llm') == selected_model_filter
-            )
-        ]
-
-    # Elabora i risultati per la visualizzazione nel selectbox
-    processed_results_for_select = []
-    for _, row in filtered_results_df.iterrows():
-        result_data = row['results']  # Questo è il dizionario che contiene tutti i dettagli
-        set_name = get_set_name(row['set_id'])
-        avg_score = result_data.get('avg_score', 0)
-        method = result_data.get('method', 'N/A')
-        method_icon = "🤖" if method == "LLM" else "📊"
-
-        processed_results_for_select.append(
-            {
-                'id': row['id'],
-                'display_name': (
-                    f"{row['timestamp']} - {method_icon} {set_name} "
-                    f"(Avg: {avg_score:.2f}%) - {method}"
-                ),
-            }
-        )
-
-    processed_results_for_select.sort(
-        key=lambda x: x['display_name'].split(' - ')[0],
-        reverse=True,
-    )  # Ordina per timestamp
-
-    result_options = {r['id']: r['display_name'] for r in processed_results_for_select}
+    result_options = prepare_select_options(
+        filtered_results_df, st.session_state.question_sets
+    )
 
     # Seleziona il risultato da visualizzare
     selected_result_id = st.selectbox(
@@ -171,9 +124,15 @@ def render():
         st.stop()
 
     # Ottieni i dati del risultato selezionato
-    selected_result_row = st.session_state.results[st.session_state.results['id'] == selected_result_id].iloc[0]
+    selected_result_row = filtered_results_df[
+        filtered_results_df['id'] == selected_result_id
+    ].iloc[0]
     result_data = selected_result_row['results']
-    set_name = get_set_name(selected_result_row['set_id'])
+    set_name_map = {
+        str(row['id']): row['name']
+        for row in st.session_state.question_sets.to_dict('records')
+    }
+    set_name = set_name_map.get(str(selected_result_row['set_id']), 'Set Sconosciuto')
     questions_results = result_data.get('questions', {})
 
     with st.expander("Esporta/Importa Risultati"):
@@ -215,7 +174,9 @@ def render():
     compare_result_data = None
     compare_questions_results = {}
     if compare_result_id:
-        compare_result_row = st.session_state.results[st.session_state.results['id'] == compare_result_id].iloc[0]
+        compare_result_row = filtered_results_df[
+            filtered_results_df['id'] == compare_result_id
+        ].iloc[0]
         compare_result_data = compare_result_row['results']
         compare_questions_results = compare_result_data.get('questions', {})
 

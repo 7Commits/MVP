@@ -1,6 +1,7 @@
 import os
 import sys
 from unittest.mock import patch
+import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -35,3 +36,33 @@ def test_delete_set_controller(mock_delete, mock_refresh):
 
     mock_delete.assert_called_once_with("sid")
     mock_refresh.assert_called_once()
+
+@patch("controllers.question_set_controller._get_question_sets")
+@patch("controllers.question_set_controller._get_questions")
+def test_prepare_sets_for_view(mock_get_questions, mock_get_sets):
+    questions_df = pd.DataFrame(
+        {
+            "id": ["1", "2"],
+            "domanda": ["d1", "d2"],
+            "risposta_attesa": ["a1", "a2"],
+            "categoria": ["A", "B"],
+        }
+    )
+    sets_df = pd.DataFrame(
+        {
+            "id": ["s1", "s2"],
+            "name": ["set1", "set2"],
+            "questions": [["1"], ["2"]],
+        }
+    )
+
+    mock_get_questions.return_value = questions_df
+    mock_get_sets.return_value = sets_df
+
+    result = question_set_controller.prepare_sets_for_view(["A"])
+
+    assert result["categories"] == ["A", "B"]
+    assert result["sets_df"]["id"].tolist() == ["s1"]
+    assert result["sets_df"].iloc[0]["questions_detail"] == [
+        {"id": "1", "domanda": "d1", "categoria": "A"}
+    ]

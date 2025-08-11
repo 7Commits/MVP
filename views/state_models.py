@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SetPageState:
-    """Transient UI state for the question set management page."""
+    """Stato UI temporaneo per la pagina di gestione dei set di domande."""
 
     save_set_success: bool = False
     save_set_success_message: str = "Set aggiornato con successo!"
@@ -29,7 +29,7 @@ class SetPageState:
 
 @dataclass
 class QuestionPageState:
-    """Transient UI state for the question management page."""
+    """Stato UI temporaneo per la pagina di gestione delle domande."""
 
     save_success: bool = False
     save_success_message: str = "Domanda aggiornata con successo!"

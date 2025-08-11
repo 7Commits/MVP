@@ -14,7 +14,7 @@ from utils.cache import (
 )
 from openai import APIConnectionError, APIStatusError, RateLimitError
 
-from . import openai_client
+from utils import openai_client
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +47,18 @@ def get_preset_by_id(
     return match.iloc[0].to_dict()
 
 
+def get_preset_by_name(
+    name: str, df: pd.DataFrame | None = None
+) -> Optional[dict]:
+    """Recupera un singolo preset dato il suo nome."""
+    if df is None:
+        df = load_presets()
+    match = df[df["name"] == name]
+    if match.empty:
+        return None
+    return match.iloc[0].to_dict()
+
+
 def validate_preset(data: dict, preset_id: Optional[str] = None) -> Tuple[bool, str]:
     """Valida i dati di un preset prima del salvataggio."""
     name = data.get("name", "").strip()
@@ -72,6 +84,7 @@ def save_preset(
     df = load_presets()
     preset_data = {
         "name": data.get("name"),
+        "provider_name": data.get("provider_name", ""),
         "endpoint": data.get("endpoint"),
         "api_key": data.get("api_key"),
         "model": data.get("model"),
@@ -90,7 +103,8 @@ def save_preset(
         df = pd.concat([df, pd.DataFrame([preset_data])], ignore_index=True)
         success_message = f"Preset '{preset_data['name']}' creato con successo!"
 
-    APIPreset.save_df(df)
+    presets = [APIPreset(**row) for row in df.to_dict(orient="records")]
+    APIPreset.save(presets)
     updated_df = refresh_api_presets()
     return True, success_message, updated_df
 

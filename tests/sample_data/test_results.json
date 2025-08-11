@@ -1,0 +1,4 @@
+[
+  {"id": "1", "set_id": "s1", "timestamp": "2023-01-01", "results": {}},
+  {"id": "2", "set_id": "s2", "timestamp": "2023-01-02", "results": {}}
+]

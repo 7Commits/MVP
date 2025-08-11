@@ -2,7 +2,7 @@ import logging
 
 import streamlit as st
 
-from controllers import get_initial_state
+from controllers.startup_controller import get_initial_state
 logger = logging.getLogger(__name__)
 
 

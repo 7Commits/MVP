@@ -12,7 +12,7 @@ from views import (
 )
 from views.session_state import initialize_session_state
 from views.style_utils import add_global_styles
-from controllers.startup_controller import setup_logging
+from utils.startup_utils import setup_logging
 
 logger = logging.getLogger(__name__)
 

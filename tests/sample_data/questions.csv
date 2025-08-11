@@ -1,0 +1,4 @@
+id,domanda,risposta_attesa,categoria
+q1,Existing question?,Answer1,cat1
+q2,New question?,Answer2,cat2
+q2,Duplicate question?,Answer3,cat3

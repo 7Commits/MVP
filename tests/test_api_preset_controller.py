@@ -34,10 +34,10 @@ def test_validate_preset_ok(mock_load):
 
 
 @patch("controllers.api_preset_controller.refresh_api_presets")
-@patch("controllers.api_preset_controller.APIPreset.save_df")
+@patch("controllers.api_preset_controller.APIPreset.save")
 @patch("controllers.api_preset_controller.load_presets")
 @patch("controllers.api_preset_controller.uuid.uuid4", return_value="new-id")
-def test_save_preset_new(mock_uuid, mock_load, mock_save_df, mock_refresh):
+def test_save_preset_new(mock_uuid, mock_load, mock_save, mock_refresh):
     df = pd.DataFrame([
         {
             "id": "1",
@@ -67,10 +67,10 @@ def test_save_preset_new(mock_uuid, mock_load, mock_save_df, mock_refresh):
     assert ok is True
     assert "creato" in msg
     assert returned_df is updated_df
-    mock_save_df.assert_called_once()
-    saved_df = mock_save_df.call_args[0][0]
-    assert "new-id" in saved_df["id"].values
-    assert "New" in saved_df["name"].values
+    mock_save.assert_called_once()
+    saved_presets = mock_save.call_args[0][0]
+    assert any(p.id == "new-id" for p in saved_presets)
+    assert any(p.name == "New" for p in saved_presets)
 
 
 @patch("controllers.api_preset_controller.refresh_api_presets")
@@ -99,7 +99,7 @@ def test_delete_preset(mock_load, mock_delete, mock_refresh):
     mock_delete.assert_called_once_with("1")
 
 
-@patch("controllers.api_preset_controller.openai_client.get_openai_client")
+@patch("utils.openai_client.get_openai_client")
 def test_test_api_connection_delegates(mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client

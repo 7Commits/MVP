@@ -53,13 +53,9 @@ def refresh_api_presets() -> pd.DataFrame:
     return get_api_presets()
 
 
-@lru_cache(maxsize=1)
 def get_results() -> pd.DataFrame:
-    data = [asdict(r) for r in TestResult.load_all()]
-    columns = ["id", "set_id", "timestamp", "results"]
-    return pd.DataFrame(data, columns=columns)
+    return TestResult.load_all_df()
 
 
 def refresh_results() -> pd.DataFrame:
-    get_results.cache_clear()
-    return get_results()
+    return TestResult.refresh_cache()
