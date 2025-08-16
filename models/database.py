@@ -17,7 +17,18 @@ class DatabaseEngine:
     _instance = None
     _instance_lock = threading.Lock()
 
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is not None:
+            raise RuntimeError(
+                "DatabaseEngine è un singleton; usa DatabaseEngine.instance()"
+            )
+        return super().__new__(cls)
+
     def __init__(self) -> None:
+        if self.__class__._instance is not None:
+            raise RuntimeError(
+                "DatabaseEngine è un singleton; usa DatabaseEngine.instance()"
+            )
         self._engine: Optional[Engine] = None
         self._session_factory: Optional[sessionmaker] = None
         self._engine_lock = threading.Lock()
@@ -30,6 +41,19 @@ class DatabaseEngine:
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reimposta l'istanza singleton e svuota le risorse in cache."""
+        with cls._instance_lock:
+            if cls._instance is not None:
+                with cls._instance._engine_lock:
+                    if cls._instance._engine is not None:
+                        cls._instance._engine.dispose()
+                        cls._instance._engine = None
+                with cls._instance._session_lock:
+                    cls._instance._session_factory = None
+            cls._instance = None
 
     def _load_config(self) -> Mapping[str, str]:
         config = configparser.ConfigParser()

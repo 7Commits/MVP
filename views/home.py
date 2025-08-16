@@ -1,12 +1,15 @@
-"""Home page view module for the Streamlit application."""
+"""Modulo della vista per la pagina Home dell'applicazione Streamlit."""
 
 import logging
 
 import streamlit as st
 from .style_utils import add_home_styles
+from views import register_page
+
 logger = logging.getLogger(__name__)
 
 
+@register_page("Home")
 def render():
     """Visualizza la pagina principale con le funzionalità della piattaforma."""
 

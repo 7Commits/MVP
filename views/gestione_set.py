@@ -5,6 +5,7 @@ from controllers import (
     load_sets,
     prepare_sets_for_view,
 )
+from views import register_page
 from views.style_utils import add_page_header, add_global_styles
 from views.state_models import SetPageState
 from views.set_helpers import (
@@ -17,6 +18,7 @@ from views.set_helpers import (
 logger = logging.getLogger(__name__)
 
 
+@register_page("Gestione Set di Domande")
 def render():
     add_global_styles()
 

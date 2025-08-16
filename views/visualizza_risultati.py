@@ -15,10 +15,12 @@ from controllers import (
     list_model_names,
     prepare_select_options,
 )
+from views import register_page
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 
 
+@register_page("Visualizzazione Risultati")
 def render():
     add_page_header(
         "Visualizzazione Risultati Test",
@@ -144,18 +146,32 @@ def render():
                 'timestamp': selected_result_row['timestamp'],
                 'results': result_data
             }, indent=2)
+            selected_filename = st.text_input(
+                "Nome file per export risultato selezionato",
+                value=f"result_{selected_result_row['id']}.json",
+                key="selected_result_filename",
+            )
+            if selected_filename and not selected_filename.endswith(".json"):
+                selected_filename += ".json"
             st.download_button(
                 "Export Risultato Selezionato",
                 selected_json,
-                file_name=f"result_{selected_result_row['id']}.json",
+                file_name=selected_filename,
                 mime="application/json"
             )
 
+            all_filename = st.text_input(
+                "Nome file per export tutti i risultati",
+                value="all_results.json",
+                key="all_results_filename",
+            )
+            if all_filename and not all_filename.endswith(".json"):
+                all_filename += ".json"
             all_json = json.dumps(st.session_state.results.to_dict(orient="records"), indent=2)
             st.download_button(
                 "Export Tutti i Risultati",
                 all_json,
-                file_name="all_results.json",
+                file_name=all_filename,
                 mime="application/json"
             )
 

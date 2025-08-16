@@ -3,10 +3,13 @@ import os
 import sys
 from types import SimpleNamespace
 
+import pytest
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils.openai_client import (  # noqa: E402
     DEFAULT_MODEL,
+    ClientCreationError,
     get_available_models_for_endpoint,
     get_openai_client,
 )
@@ -14,9 +17,16 @@ from utils.openai_client import (  # noqa: E402
 
 def test_get_openai_client_no_api_key(caplog):
     caplog.set_level(logging.WARNING)
-    client = get_openai_client("")
-    assert client is None
+    with pytest.raises(ClientCreationError):
+        get_openai_client("")
     assert "Tentativo di creare client OpenAI senza chiave API." in caplog.text
+
+
+def test_get_openai_client_creation_failure(mocker):
+    mock_openai = mocker.patch("utils.openai_client.OpenAI", side_effect=RuntimeError("boom"))
+    with pytest.raises(ClientCreationError):
+        get_openai_client("key")
+    mock_openai.assert_called_once()
 
 
 def test_get_openai_client_uses_custom_base_url(mocker):
@@ -31,7 +41,10 @@ def test_get_openai_client_uses_custom_base_url(mocker):
 
 
 def test_get_available_models_returns_error_when_no_client(mocker):
-    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
+    mocker.patch(
+        "utils.openai_client.get_openai_client",
+        side_effect=ClientCreationError("boom"),
+    )
     models = get_available_models_for_endpoint(
         "Personalizzato", endpoint_url="http://endpoint", api_key="key"
     )

@@ -1,11 +1,11 @@
 """Controller per la gestione delle domande senza layer di service."""
 
 import logging
-from typing import IO, Optional, Tuple, List, Dict, Any
+from typing import IO, Optional, Tuple, List, Dict, Any, Union
 
 import pandas as pd
 
-from models.question import Question
+from models.question import Question, question_importer
 from utils.cache import (
     get_questions as _get_questions,
     refresh_questions as _refresh_questions,
@@ -106,6 +106,11 @@ def delete_question_action(question_id: str) -> pd.DataFrame:
     return questions
 
 
+def export_questions_action(destination: Union[str, IO[str]]) -> None:
+    """Esporta tutte le domande nella destinazione fornita."""
+    question_importer.export_to_file(destination)
+
+
 def import_questions_action(uploaded_file: IO[str] | IO[bytes]) -> Dict[str, Any]:
     """Importa domande da file e restituisce i risultati dell'operazione.
 
@@ -123,8 +128,8 @@ def import_questions_action(uploaded_file: IO[str] | IO[bytes]) -> Dict[str, Any
     if uploaded_file is None:
         raise ValueError("Nessun file caricato.")
 
-    result = Question.import_from_file(uploaded_file)
-    if not result["success"]:
+    result = question_importer.import_from_file(uploaded_file)
+    if not result.get("success", True):
         message = "; ".join(result.get("warnings", []))
         raise ValueError(message)
 

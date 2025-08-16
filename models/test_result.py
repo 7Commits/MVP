@@ -2,7 +2,7 @@ import logging
 
 from dataclasses import dataclass, asdict
 import uuid
-from typing import Any, Dict, List, Tuple, cast
+from typing import IO, Any, Dict, List, cast
 from functools import lru_cache
 
 import pandas as pd
@@ -11,6 +11,9 @@ from sqlalchemy import select
 from models.database import DatabaseEngine
 from models.orm_models import TestResultORM
 from utils.file_reader_utils import read_test_results, filter_new_rows
+from utils.import_template import ImportTemplate
+from utils.export_template import ExportTemplate
+
 logger = logging.getLogger(__name__)
 
 
@@ -77,31 +80,7 @@ class TestResult:
                 TestResult(**row) for row in combined_df.to_dict(orient="records")
             ]
             TestResult.save(results)
-            TestResult.refresh_cache()
         return added_count
-
-    @staticmethod
-    def import_from_file(file) -> Tuple[bool, str]:
-        """Importa risultati di test da ``file``.
-
-        Il file è analizzato tramite :func:`utils.file_reader_utils.read_test_results`.
-        I risultati esistenti (corrispondenti per ``id``) vengono ignorati. Le nuove
-        voci vengono salvate e la cache viene aggiornata.
-        """
-
-        try:
-            imported_df = read_test_results(file)
-            added_count = TestResult._persist_entities(imported_df)
-            message = (
-                f"Importati {added_count} risultati."
-                if added_count > 0
-                else "Nessun nuovo risultato importato."
-            )
-            return True, message
-        except ValueError as e:
-            return False, str(e)
-        except Exception as e:  # pragma: no cover
-            return False, f"Errore durante l'importazione dei risultati: {str(e)}"
 
     @staticmethod
     def save(results: List["TestResult"]) -> None:
@@ -188,4 +167,31 @@ class TestResult:
             "per_question_scores": per_question_scores,
             "radar_metrics": radar_metrics,
         }
+
+
+class TestResultImporter(ImportTemplate, ExportTemplate):
+    """Importer per i risultati di test basato su :class:`ImportTemplate` e :class:`ExportTemplate`."""
+
+    def parse_file(self, file: IO[Any]) -> pd.DataFrame:  # type: ignore[override]
+        """Legge i risultati dal file usando ``read_test_results``."""
+        return read_test_results(file)
+
+    def persist_data(self, df: pd.DataFrame) -> Dict[str, Any]:  # type: ignore[override]
+        """Persiste i dati tramite :meth:`TestResult._persist_entities`."""
+        added_count = TestResult._persist_entities(df)
+        if added_count > 0:
+            TestResult.refresh_cache()
+        message = (
+            f"Importati {added_count} risultati."
+            if added_count > 0
+            else "Nessun nuovo risultato importato."
+        )
+        return {"success": True, "imported_count": added_count, "message": message}
+
+    def gather_data(self) -> pd.DataFrame:  # type: ignore[override]
+        """Recupera tutti i risultati dei test dal database."""
+        return TestResult.load_all_df()
+
+
+test_result_importer = TestResultImporter()
 

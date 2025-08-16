@@ -49,6 +49,9 @@ class DummySt:
     def selectbox(self, label, options, index=0, **kwargs):
         return options[index]
 
+    def text_input(self, label, value="", **kwargs):
+        return value
+
     def button(self, label, on_click=None, **kwargs):
         if on_click:
             self.captured_callbacks[label] = on_click

@@ -11,6 +11,8 @@ from models.database import DatabaseEngine
 from models.orm_models import QuestionORM, question_set_questions
 from utils.data_format_utils import format_questions_for_view
 from utils.file_reader_utils import read_questions, filter_new_rows
+from utils.import_template import ImportTemplate
+from utils.export_template import ExportTemplate
 logger = logging.getLogger(__name__)
 
 
@@ -133,36 +135,6 @@ class Question:
         return added_count, warnings
 
     @staticmethod
-    def import_from_file(file: IO[str] | IO[bytes]) -> Dict[str, Any]:
-        """Importa domande da un file CSV o JSON.
-
-        Parametri
-        ---------
-        file: file-like
-            File contenente le domande da importare.
-
-        Restituisce
-        -----------
-        dict
-            ``{"success": bool, "imported_count": int, "warnings": list[str]}``
-        """
-
-        try:
-            df = read_questions(file)
-        except ValueError as exc:
-            return {"success": False, "imported_count": 0, "warnings": [str(exc)]}
-        except Exception as exc:  # pragma: no cover - defensive
-            return {
-                "success": False,
-                "imported_count": 0,
-                "warnings": [f"Errore durante la lettura del file: {exc}"],
-            }
-
-        imported, warnings = Question._persist_entities(df)
-
-        return {"success": True, "imported_count": imported, "warnings": warnings}
-
-    @staticmethod
     def filter_by_category(
         category: Optional[str] = None,
     ) -> Tuple[pd.DataFrame, List[str]]:
@@ -174,3 +146,24 @@ class Question:
         filtered_df = df[df["categoria"] == category] if category else df
 
         return filtered_df, categories
+
+
+class QuestionImporter(ImportTemplate, ExportTemplate):
+    """Importer per le domande basato su :class:`ImportTemplate` e :class:`ExportTemplate`."""
+
+    def parse_file(self, file: IO[Any]) -> pd.DataFrame:  # type: ignore[override]
+        """Legge le domande dal file usando ``read_questions``."""
+        return read_questions(file)
+
+    def persist_data(self, df: pd.DataFrame) -> Dict[str, Any]:  # type: ignore[override]
+        """Persiste i dati tramite :meth:`Question._persist_entities`."""
+        imported, warnings = Question._persist_entities(df)
+        return {"success": True, "imported_count": imported, "warnings": warnings}
+
+    def gather_data(self) -> pd.DataFrame:  # type: ignore[override]
+        """Recupera tutte le domande dal database."""
+        questions = Question.load_all()
+        return pd.DataFrame([q.__dict__ for q in questions])
+
+
+question_importer = QuestionImporter()

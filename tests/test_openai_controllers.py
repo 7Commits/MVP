@@ -3,6 +3,8 @@ import sys
 
 import pytest
 
+from utils.openai_client import ClientCreationError
+
 # Aggiunge la cartella principale al percorso dei moduli per i test
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -34,7 +36,10 @@ def test_generate_answer_success(mocker):
 
 
 def test_generate_answer_no_client(mocker):
-    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
+    mocker.patch(
+        "utils.openai_client.get_openai_client",
+        side_effect=ClientCreationError("boom"),
+    )
     with pytest.raises(ValueError):
         generate_answer("question", {"api_key": None})
 
@@ -80,7 +85,10 @@ def test_test_api_connection_unexpected_response(mocker):
 
 
 def test_test_api_connection_no_client(mocker):
-    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
+    mocker.patch(
+        "utils.openai_client.get_openai_client",
+        side_effect=ClientCreationError("boom"),
+    )
     ok, msg = api_preset_controller.test_api_connection(
         "key", "endpoint", "model", 0.1, 10
     )

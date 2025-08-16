@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from models.question import Question
+from models.question import question_importer
 
 
 class DummySession:
@@ -49,7 +49,7 @@ def test_import_from_file_skips_duplicates_and_adds_new(mocker):
     for filename in ["questions.csv", "questions.json"]:
         engine.session.inserted.clear()
         with open(os.path.join(data_dir, filename), "r", encoding="utf-8") as f:
-            result = Question.import_from_file(f)
+            result = question_importer.import_from_file(f)
         assert result["success"] is True
         assert result["imported_count"] == 1
         assert any("q1" in w for w in result["warnings"])

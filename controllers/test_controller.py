@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, IO, List, Tuple
+from typing import Any, Dict, IO, List, Tuple, Union
 
 import pandas as pd
 from openai import APIConnectionError, APIStatusError, RateLimitError
 
-from models.test_result import TestResult
+from models.test_result import TestResult, test_result_importer
 from models.question import Question
 from utils import openai_client
 
@@ -52,12 +52,14 @@ def import_results_action(
     if uploaded_file is None:
         raise ValueError("Nessun file caricato.")
 
-    success, message = TestResult.import_from_file(uploaded_file)
-    if not success:
-        raise ValueError(message)
-
+    result = test_result_importer.import_from_file(uploaded_file)
     results = load_results()
-    return results, message
+    return results, result["message"]
+
+
+def export_results_action(destination: Union[str, IO[str]]) -> None:
+    """Esporta i risultati dei test nella destinazione fornita."""
+    test_result_importer.export_to_file(destination)
 
 
 def generate_answer(question: str, client_config: Dict[str, Any]) -> str:
@@ -68,13 +70,16 @@ def generate_answer(question: str, client_config: Dict[str, Any]) -> str:
     """
 
     api_key = str(client_config.get("api_key", ""))
-    client = openai_client.get_openai_client(
-        api_key=api_key,
-        base_url=client_config.get("endpoint"),
-    )
-    if not client:
-        logger.error("Client API per la generazione risposte non configurato.")
-        raise ValueError("Client API non configurato")
+    try:
+        client = openai_client.get_openai_client(
+            api_key=api_key,
+            base_url=client_config.get("endpoint"),
+        )
+    except openai_client.ClientCreationError as exc:
+        logger.error(
+            "Client API per la generazione risposte non configurato: %s", exc
+        )
+        raise ValueError("Client API non configurato") from exc
 
     if question is None or not isinstance(question, str) or question.strip() == "":
         logger.error("La domanda fornita è vuota o non valida.")
@@ -119,12 +124,15 @@ def evaluate_answer(
     """
 
     api_key = str(client_config.get("api_key", ""))
-    client = openai_client.get_openai_client(
-        api_key=api_key,
-        base_url=client_config.get("endpoint"),
-    )
-    if not client:
-        raise ValueError("Errore: Client API per la valutazione non configurato.")
+    try:
+        client = openai_client.get_openai_client(
+            api_key=api_key,
+            base_url=client_config.get("endpoint"),
+        )
+    except openai_client.ClientCreationError as exc:
+        raise ValueError(
+            "Errore: Client API per la valutazione non configurato."
+        ) from exc
 
     prompt = f"""
     Sei un valutatore esperto che valuta la qualità delle risposte alle domande.

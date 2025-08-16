@@ -11,6 +11,7 @@ from controllers import (
     delete_question_action,
     import_questions_action,
 )
+from views import register_page
 from views.style_utils import add_page_header
 from views.state_models import QuestionPageState
 logger = logging.getLogger(__name__)
@@ -105,6 +106,7 @@ def confirm_delete_question_dialog(question_id, question_text):
             st.rerun()
 
 
+@register_page("Gestione Domande")
 def render():
     # === Inizializzazione dello stato ===
     st.session_state.setdefault("question_page_state", QuestionPageState())

@@ -141,6 +141,15 @@ def test_filter_by_category_empty_df(mocker):
     assert categories == []
 
 
+def test_export_questions_action(mocker, tmp_path):
+    mock_export = mocker.patch(
+        "controllers.question_controller.question_importer.export_to_file"
+    )
+    dest = tmp_path / "qs.csv"
+    question_controller.export_questions_action(dest)
+    mock_export.assert_called_once_with(dest)
+
+
 def test_get_question_text_found(mocker):
     mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
     mock_load = mocker.patch("controllers.question_controller.load_questions")
@@ -223,7 +232,7 @@ def test_delete_question_action(mocker):
 def test_import_questions_action_success(mocker):
     mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
     mock_import = mocker.patch(
-        "controllers.question_controller.Question.import_from_file"
+        "controllers.question_controller.question_importer.import_from_file"
     )
     mock_import.return_value = {
         "success": True,
@@ -251,7 +260,7 @@ def test_import_questions_action_no_file():
 def test_import_questions_action_failure(mocker):
     mock_refresh = mocker.patch("controllers.question_controller.refresh_questions")
     mock_import = mocker.patch(
-        "controllers.question_controller.Question.import_from_file"
+        "controllers.question_controller.question_importer.import_from_file"
     )
     mock_import.return_value = {
         "success": False,

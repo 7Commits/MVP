@@ -1,9 +1,9 @@
 import logging
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, IO, Union
 
 import pandas as pd
 
-from models.question_set import QuestionSet, PersistSetsResult
+from models.question_set import QuestionSet, PersistSetsResult, question_set_importer
 from utils.cache import (
     get_questions as _get_questions,
     get_question_sets as _get_question_sets,
@@ -50,6 +50,11 @@ def delete_set(set_id: str) -> pd.DataFrame:
     Restituisce il DataFrame aggiornato dei set di domande."""
     QuestionSet.delete(set_id)
     return refresh_question_sets()
+
+
+def export_sets_action(destination: Union[str, IO[str]]) -> None:
+    """Esporta tutti i set di domande nella destinazione indicata."""
+    question_set_importer.export_to_file(destination)
 
 
 def prepare_sets_for_view(

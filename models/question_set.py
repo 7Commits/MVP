@@ -7,6 +7,8 @@ import pandas as pd
 from sqlalchemy import select
 
 from utils.file_reader_utils import read_question_sets
+from utils.import_template import ImportTemplate
+from utils.export_template import ExportTemplate
 from models.database import DatabaseEngine
 from models.orm_models import QuestionSetORM, QuestionORM
 logger = logging.getLogger(__name__)
@@ -237,19 +239,57 @@ class QuestionSet:
 
     @staticmethod
     def import_from_file(uploaded_file: IO[str] | IO[bytes]) -> "PersistSetsResult":
-        """Importa uno o più set di domande da un file JSON o CSV."""
+        """Deprecated wrapper for compatibility.
+
+        Usa :class:`QuestionSetImporter` per le nuove importazioni.
+        """
 
         if uploaded_file is None:
             raise ValueError("Nessun file fornito per l'importazione.")
 
-        data = read_question_sets(uploaded_file)
-        from controllers.question_controller import load_questions
-        current_questions = load_questions()
-        from controllers.question_set_controller import load_sets
-        current_sets = load_sets()
-        persist_result = QuestionSet._persist_entities(
-            data, current_questions, current_sets
+        import warnings
+
+        warnings.warn(
+            "QuestionSet.import_from_file è deprecato; usa QuestionSetImporter.import_from_file",
+            DeprecationWarning,
+            stacklevel=2,
         )
 
-        return persist_result
+        return question_set_importer.import_from_file(uploaded_file)
+
+
+class QuestionSetImporter(ImportTemplate, ExportTemplate):
+    """Importer per i set di domande basato su :class:`ImportTemplate` e :class:`ExportTemplate`."""
+
+    def parse_file(self, file: IO[Any]) -> List[Dict[str, Any]]:  # type: ignore[override]
+        """Legge i set di domande dal file usando ``read_question_sets``."""
+        return read_question_sets(file)
+
+    def persist_data(self, parsed: List[Dict[str, Any]]) -> PersistSetsResult:  # type: ignore[override]
+        """Persiste i dati tramite :meth:`QuestionSet._persist_entities`."""
+        from controllers.question_controller import load_questions
+        from controllers.question_set_controller import load_sets
+
+        current_questions = load_questions()
+        current_sets = load_sets()
+
+        return QuestionSet._persist_entities(parsed, current_questions, current_sets)
+
+    def gather_data(self) -> List[Dict[str, Any]]:  # type: ignore[override]
+        """Recupera tutti i set di domande con i dettagli delle domande."""
+        from models.question import Question
+
+        sets = QuestionSet.load_all()
+        questions = {
+            q.id: {"id": q.id, "domanda": q.domanda, "risposta_attesa": q.risposta_attesa, "categoria": q.categoria}
+            for q in Question.load_all()
+        }
+        data: List[Dict[str, Any]] = []
+        for s in sets:
+            q_list = [questions.get(qid, {"id": qid}) for qid in s.questions]
+            data.append({"name": s.name, "questions": q_list})
+        return data
+
+
+question_set_importer = QuestionSetImporter()
 

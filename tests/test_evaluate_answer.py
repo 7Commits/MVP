@@ -5,6 +5,8 @@ import sys
 
 import pytest
 
+from utils.openai_client import ClientCreationError
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from controllers.test_controller import evaluate_answer  # noqa: E402
@@ -50,7 +52,10 @@ def test_evaluate_answer_success(mocker):
 
 
 def test_evaluate_answer_no_client(mocker):
-    mocker.patch("utils.openai_client.get_openai_client", return_value=None)
+    mocker.patch(
+        "utils.openai_client.get_openai_client",
+        side_effect=ClientCreationError("boom"),
+    )
     with pytest.raises(ValueError):
         evaluate_answer(
             "q", "expected", "actual", {"api_key": None}

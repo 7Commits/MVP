@@ -82,3 +82,12 @@ def test_prepare_sets_for_view(mocker):
     assert result["sets_df"].iloc[0]["questions_detail"] == [
         {"id": "1", "domanda": "d1", "categoria": "A"}
     ]
+
+
+def test_export_sets_action(mocker, tmp_path):
+    mock_export = mocker.patch(
+        "controllers.question_set_controller.question_set_importer.export_to_file"
+    )
+    dest = tmp_path / "sets.csv"
+    question_set_controller.export_sets_action(dest)
+    mock_export.assert_called_once_with(dest)

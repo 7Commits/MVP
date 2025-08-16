@@ -28,6 +28,7 @@ from .question_controller import (
     import_questions_action,
     get_question_text,
     get_question_category,
+    export_questions_action,
 )
 
 # Gestione dei set di domande
@@ -38,6 +39,7 @@ from .question_set_controller import (
     update_set,
     delete_set,
     prepare_sets_for_view,
+    export_sets_action,
 )
 
 # Risultati e utilità di valutazione
@@ -45,6 +47,7 @@ from .test_controller import (
     load_results,
     refresh_results,
     import_results_action,
+    export_results_action,
     generate_answer,
     evaluate_answer,
     run_test,
@@ -89,6 +92,7 @@ __all__ = [
     "import_questions_action",
     "get_question_text",
     "get_question_category",
+    "export_questions_action",
     # Set di domande
     "load_sets",
     "refresh_question_sets",
@@ -96,10 +100,12 @@ __all__ = [
     "update_set",
     "delete_set",
     "prepare_sets_for_view",
+    "export_sets_action",
     # Risultati dei test
     "load_results",
     "refresh_results",
     "import_results_action",
+    "export_results_action",
     "generate_answer",
     "evaluate_answer",
     "calculate_statistics",

@@ -12,7 +12,7 @@ from controllers.test_controller import import_results_action, run_test
 
 def test_import_results_action_no_file(mocker):
     mock_import = mocker.patch(
-        "controllers.test_controller.TestResult.import_from_file"
+        "controllers.test_controller.test_result_importer.import_from_file"
     )
     mock_load_results = mocker.patch("controllers.test_controller.load_results")
     with pytest.raises(ValueError, match="Nessun file caricato"):
@@ -23,10 +23,10 @@ def test_import_results_action_no_file(mocker):
 
 def test_import_results_action_failure(mocker):
     mock_import = mocker.patch(
-        "controllers.test_controller.TestResult.import_from_file"
+        "controllers.test_controller.test_result_importer.import_from_file"
     )
     mock_load_results = mocker.patch("controllers.test_controller.load_results")
-    mock_import.return_value = (False, "errore")
+    mock_import.side_effect = ValueError("errore")
     with pytest.raises(ValueError, match="errore"):
         import_results_action("dummy")
     mock_load_results.assert_not_called()
@@ -91,3 +91,14 @@ def test_run_test_generation_and_evaluation_errors(mocker):
     assert q2["actual_answer"] == "ans2"
     assert q2["evaluation"]["score"] == 0
     assert isinstance(res["results_df"], pd.DataFrame)
+
+
+def test_export_results_action(mocker, tmp_path):
+    mock_export = mocker.patch(
+        "controllers.test_controller.test_result_importer.export_to_file"
+    )
+    dest = tmp_path / "results.json"
+    from controllers.test_controller import export_results_action
+
+    export_results_action(dest)
+    mock_export.assert_called_once_with(dest)

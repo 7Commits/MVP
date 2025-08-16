@@ -127,8 +127,9 @@ def test_api_connection(
 ) -> Tuple[bool, str]:
     """Testa la connessione all'API LLM con i parametri forniti."""
 
-    client = openai_client.get_openai_client(api_key=api_key, base_url=endpoint)
-    if not client:
+    try:
+        client = openai_client.get_openai_client(api_key=api_key, base_url=endpoint)
+    except openai_client.ClientCreationError:
         return False, "Client API non inizializzato. Controlla chiave API e endpoint."
 
     try:

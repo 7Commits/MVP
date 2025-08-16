@@ -1,6 +1,7 @@
 import logging
 import streamlit as st
 
+from views import register_page
 from views.style_utils import add_page_header, add_section_title
 from controllers import (
     save_preset,
@@ -115,6 +116,7 @@ def delete_preset_callback(preset_id):
         st.error(message)
 
 
+@register_page("Configurazione API")
 def render():
     add_page_header(
         "Gestione Preset API",

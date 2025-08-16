@@ -6,9 +6,8 @@ from models.database import DatabaseEngine
 
 
 def test_get_engine_uses_config_and_create_engine(monkeypatch):
-    DatabaseEngine._instance = None  # ensure fresh singleton
+    DatabaseEngine.reset_instance()  # assicura un singleton pulito
     db = DatabaseEngine.instance()
-    db._engine = None  # type: ignore[attr-defined]
     fake_cfg = {'user': 'u', 'password': 'p', 'host': 'h', 'database': 'db'}
     monkeypatch.setattr(DatabaseEngine, '_load_config', lambda self: fake_cfg)
     called = {}
@@ -16,7 +15,7 @@ def test_get_engine_uses_config_and_create_engine(monkeypatch):
     def fake_ensure(self, cfg):
         called['ensure'] = cfg
     monkeypatch.setattr(DatabaseEngine, '_ensure_database', fake_ensure)
-    fake_engine = SimpleNamespace()
+    fake_engine = SimpleNamespace(dispose=lambda: None)
 
     def fake_create_engine(url, pool_pre_ping=True, pool_recycle=3600):
         called['url'] = url
@@ -27,12 +26,12 @@ def test_get_engine_uses_config_and_create_engine(monkeypatch):
     assert engine is fake_engine
     assert called['ensure'] == fake_cfg
     assert 'mysql+pymysql://u:p@h:3306/db' in called['url']
-    # second call should reuse same engine
+    # la seconda chiamata dovrebbe riutilizzare lo stesso engine
     assert db.get_engine() is fake_engine
 
 
 def test_ensure_database_error(monkeypatch):
-    DatabaseEngine._instance = None
+    DatabaseEngine.reset_instance()
     db = DatabaseEngine.instance()
 
     class DummyEngine:

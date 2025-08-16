@@ -11,6 +11,7 @@ import pytest  # noqa: E402
 from models.question_set import (
     QuestionSet,
     PersistSetsResult,
+    question_set_importer,
 )
 from utils.file_reader_utils import read_question_sets
 
@@ -99,3 +100,34 @@ def test_persist_sets_skips_duplicates(mocker):
     assert result.existing_questions_found_count == 0
     assert any("esiste già" in w for w in result.warnings)
     mock_create.assert_called_once_with("New", [])
+
+
+def test_question_set_importer_invokes_helpers(mocker):
+    mock_reader = mocker.patch(
+        "models.question_set.read_question_sets",
+        return_value=[{"name": "Sample", "questions": []}],
+    )
+    mock_persist = mocker.patch(
+        "models.question_set.QuestionSet._persist_entities",
+        return_value="ok",
+    )
+    current_questions = pd.DataFrame()
+    current_sets = pd.DataFrame()
+    mocker.patch(
+        "controllers.question_controller.load_questions",
+        return_value=current_questions,
+    )
+    mocker.patch(
+        "controllers.question_set_controller.load_sets",
+        return_value=current_sets,
+    )
+
+    file = io.StringIO("[]")
+    file.name = "data.json"
+    result = question_set_importer.import_from_file(file)
+
+    mock_reader.assert_called_once_with(file)
+    mock_persist.assert_called_once_with(
+        [{"name": "Sample", "questions": []}], current_questions, current_sets
+    )
+    assert result == "ok"
