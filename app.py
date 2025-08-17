@@ -11,7 +11,7 @@ from views import (
     visualizza_risultati,
 )
 from views.session_state import initialize_session_state
-from views.style_utils import add_global_styles
+from views.style_utils import load_css
 from utils.startup_utils import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ initialize_session_state()
 st.title("🧠 LLM Test Evaluation Platform - Artificial QI")
 
 # Aggiungi CSS personalizzato e stili globali
-add_global_styles()
+load_css()
 
 PAGES = {
     "Home": home.render,
