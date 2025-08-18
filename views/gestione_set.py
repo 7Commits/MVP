@@ -18,7 +18,7 @@ from views.set_helpers import (
 logger = logging.getLogger(__name__)
 
 
-@register_page("Gestione Set di Domande")
+#@register_page("Gestione Set di Domande")
 def render():
     add_global_styles()
 
@@ -350,3 +350,8 @@ def render():
                 key="import_set_btn",
                 on_click=lambda: import_set_callback(state)
             )
+
+if __name__ == "__main__":
+    render()
+else:
+    render()

@@ -13,6 +13,19 @@
 }
 
 /* ===========================
+   MENU
+=========================== */
+/* Aumenta la dimensione dei caratteri nel menu laterale */
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] span {
+    font-size: 20px !important;   /* Cambia 20px con la dimensione che vuoi */
+}
+/*Aumenta icone*/
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] svg {
+    width: 1.5em !important;
+    height: 1.5em !important;
+}
+
+/* ===========================
    INPUTS E SELETTORI
 =========================== */
 .stTextInput input,

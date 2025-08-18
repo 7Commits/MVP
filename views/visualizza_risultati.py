@@ -20,7 +20,7 @@ from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 
 
-@register_page("Visualizzazione Risultati")
+#@register_page("Visualizzazione Risultati")
 def render():
     add_page_header(
         "Visualizzazione Risultati Test",
@@ -388,3 +388,8 @@ def render():
 
 
                 st.markdown("--- --- ---")
+                
+if __name__ == "__main__":
+    render()
+else:
+    render()

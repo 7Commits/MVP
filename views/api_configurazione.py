@@ -116,7 +116,7 @@ def delete_preset_callback(preset_id):
         st.error(message)
 
 
-@register_page("Configurazione API")
+#@register_page("Configurazione API")
 def render():
     add_page_header(
         "Gestione Preset API",
@@ -283,3 +283,8 @@ def render():
     if "preset_deleted_message" in st.session_state:
         st.success(st.session_state.preset_deleted_message)
         del st.session_state.preset_deleted_message
+
+if __name__ == "__main__":
+    render()
+else:
+    render()

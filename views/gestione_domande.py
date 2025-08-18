@@ -106,7 +106,7 @@ def confirm_delete_question_dialog(question_id, question_text):
             st.rerun()
 
 
-@register_page("Gestione Domande")
+#@register_page("Gestione Domande")
 def render():
     # === Inizializzazione dello stato ===
     st.session_state.setdefault("question_page_state", QuestionPageState())
@@ -303,3 +303,8 @@ def render():
                 key="import_questions_btn",
                 on_click=import_questions_callback
             )
+
+if __name__ == "__main__":
+    render()
+else:
+    render()
