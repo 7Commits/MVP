@@ -358,8 +358,6 @@ def render():
                 st.markdown(f"**Risposta Attesa:** {expected_answer}")
                 st.markdown(f"**Risposta Generata/Effettiva:** {actual_answer}")
                 st.divider()
-
-
                 evaluation = q_data.get(
                     'evaluation', {}
                 )  # Assicurati che evaluation sia sempre un dizionario
@@ -388,7 +386,6 @@ def render():
 
 
                 st.markdown("--- --- ---")
-                
 if __name__ == "__main__":
     render()
 else:
