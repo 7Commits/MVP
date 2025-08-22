@@ -124,4 +124,3 @@ class DatabaseEngine:
 class Base(DeclarativeBase):
     """Base class per i modelli dichiarativi SQLAlchemy."""
     pass
-

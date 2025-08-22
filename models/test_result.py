@@ -194,4 +194,3 @@ class TestResultImporter(ImportTemplate, ExportTemplate):
 
 
 test_result_importer = TestResultImporter()
-
