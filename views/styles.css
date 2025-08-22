@@ -52,6 +52,8 @@ div[data-baseweb="select"] * {
    BOTTONI
 =========================== */
 .stButton > button {
+    background-color: #4fbdf0 !important;
+    color: white !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     padding: 0.5rem 1rem !important;
@@ -59,6 +61,35 @@ div[data-baseweb="select"] * {
     box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
 }
 .stButton > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.stFormSubmitButton > button {
+    background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
+}
+.stFormSubmitButton > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.st-emotion-cache-15yv26i > button {
+   background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important; 
+}
+.st-emotion-cache-15yv26i > button:hover {
+    background-color: #3a9ee0 !important;
     box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
     transform: translateY(-1px) !important;
 }
@@ -82,6 +113,8 @@ div[data-baseweb="select"] * {
     gap: 0.5rem;
 }
 .stTabs [data-baseweb="tab"] {
+     background-color: #EAEEFF !important;
+    color: #333333 !important;
     border-radius: 8px 8px 0 0 !important;
     padding: 0.5rem 1rem !important;
     border-bottom: none !important;
