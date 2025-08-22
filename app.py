@@ -2,14 +2,6 @@ import logging
 
 import streamlit as st
 
-from views import (
-    api_configurazione,
-    esecuzione_test,
-    gestione_domande,
-    gestione_set,
-    home,
-    visualizza_risultati,
-)
 from views.session_state import initialize_session_state
 from views.style_utils import load_css
 from utils.startup_utils import setup_logging
