@@ -25,6 +25,7 @@ def add_global_styles():
     """Aggiunge stili globali all'applicazione."""
     load_css()
 
+
 def add_page_header(title: str, icon: str = "💡", description: str | None = None):
     """Aggiunge un'intestazione di pagina stilizzata."""
     load_css()
