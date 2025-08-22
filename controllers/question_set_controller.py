@@ -3,7 +3,7 @@ from typing import List, Optional, Any, Dict, IO, Union
 
 import pandas as pd
 
-from models.question_set import QuestionSet, PersistSetsResult, question_set_importer
+from models.question_set import QuestionSet, question_set_importer
 from utils.cache import (
     get_questions as _get_questions,
     get_question_sets as _get_question_sets,
@@ -14,6 +14,7 @@ from utils.data_format_utils import (
     format_questions_for_view,
 )
 logger = logging.getLogger(__name__)
+
 
 def load_sets() -> pd.DataFrame:
     """Restituisce tutti i set di domande utilizzando la cache."""

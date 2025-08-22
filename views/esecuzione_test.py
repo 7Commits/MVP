@@ -3,7 +3,7 @@ import logging
 import streamlit as st
 
 from controllers import run_test, load_sets, load_presets, get_preset_by_name
-from views import register_page
+# from views import register_page
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def run_llm_test_callback():
     st.session_state.run_llm_test = True
 
 
-#@register_page("Esecuzione Test")
+# @register_page("Esecuzione Test")
 def render():
     # === Inizializzazione delle variabili di stato ===
     if 'test_mode' not in st.session_state:
@@ -165,6 +165,7 @@ def render():
                                 st.write("**Risposta Generata:**", result['actual_answer'])
                                 st.write("**Punteggio:**", f"{result['evaluation']['score']:.1f}%")
                                 st.write("**Valutazione:**", result['evaluation']['explanation'])
+
 
 if __name__ == "__main__":
     render()

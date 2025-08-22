@@ -15,7 +15,7 @@ from controllers import (
     list_model_names,
     prepare_select_options,
 )
-from views import register_page
+# from views import register_page
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 

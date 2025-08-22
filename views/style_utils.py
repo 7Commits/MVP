@@ -9,6 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 def load_css():
     """
     Applica il CSS globale presente in 'styles.css'.

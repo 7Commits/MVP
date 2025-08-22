@@ -4,12 +4,12 @@ import logging
 
 import streamlit as st
 from views.style_utils import add_home_styles
-from views import register_page
+# from views import register_page
 
 logger = logging.getLogger(__name__)
 
 
-#@register_page("Home")
+# @register_page("Home")
 def render():
     """Visualizza la pagina principale con le funzionalità della piattaforma."""
 
@@ -100,6 +100,7 @@ def render():
 """,
         unsafe_allow_html=True,
     )
+
 
 if __name__ == "__main__":
     render()

@@ -5,7 +5,7 @@ from utils.startup_utils import (
     DefaultConfig,
     initialize_database,
     load_default_config,
-    setup_logging,
+    # setup_logging,
 )
 
 logger = logging.getLogger(__name__)
