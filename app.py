@@ -32,8 +32,8 @@ Configurazione_API = st.Page("views/api_configurazione.py", title="Configurazion
 Gestione_domande = st.Page("views/gestione_domande.py", title="Gestione Domande", icon=":material/construction:")
 Gestione_set = st.Page("views/gestione_set.py", title="Gestione Set di Domande", icon=":material/list:")
 Esecuzione_test = st.Page("views/esecuzione_test.py", title="Esecuzione Test", icon=":material/rule_settings:")
-Visualizza_risultati = st.Page("views/visualizza_risultati.py", 
-                               title="Visualizzazione Risultati", 
+Visualizza_risultati = st.Page("views/visualizza_risultati.py",
+                               title="Visualizzazione Risultati",
                                icon=":material/bar_chart:")
 
 # --- Navigazione ---
