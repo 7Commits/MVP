@@ -123,7 +123,7 @@ def render():
                     st.session_state.set_expanders[exp_key] = False
 
                 with st.expander(
-                    f"Set: {row['name']}",
+                    f"{row['name']}",
                     expanded=st.session_state.set_expanders.get(exp_key, False),
                 ):
                     col1, col2 = st.columns([3, 1])
