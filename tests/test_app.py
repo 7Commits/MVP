@@ -19,10 +19,21 @@ def test_app_page_config_and_navigation(monkeypatch):
         return options[0]
 
     fake_sidebar = types.SimpleNamespace(radio=fake_radio)
+
+    def fake_page(_path, title, **_k):
+        return types.SimpleNamespace(title=title)
+
+    def fake_navigation(pages):
+        options = [p.title for p in pages]
+        fake_sidebar.radio("Navigazione", options)
+        return types.SimpleNamespace(run=lambda: None)
+
     fake_st = types.SimpleNamespace(
         set_page_config=fake_set_page_config,
         sidebar=fake_sidebar,
         title=lambda *a, **k: None,
+        Page=fake_page,
+        navigation=fake_navigation,
     )
 
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
@@ -74,5 +85,13 @@ def test_app_page_config_and_navigation(monkeypatch):
 
     assert page_config["page_title"] == "LLM Test Evaluation Platform"
     assert radio_call["label"] == "Navigazione"
-    assert radio_call["options"] == list(app.PAGES.keys())
+    expected_pages = [
+        "Home",
+        "Configurazione API",
+        "Gestione Domande",
+        "Gestione Set di Domande",
+        "Esecuzione Test",
+        "Visualizzazione Risultati",
+    ]
+    assert radio_call["options"] == expected_pages
 

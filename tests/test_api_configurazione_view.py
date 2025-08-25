@@ -1,11 +1,23 @@
 import os
 import sys
+import importlib
 import pandas as pd
+import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils.openai_client import DEFAULT_MODEL, DEFAULT_ENDPOINT
-from views import api_configurazione as view
+
+
+@pytest.fixture
+def view(monkeypatch):
+    import controllers
+
+    monkeypatch.setattr(controllers, "load_presets", lambda: pd.DataFrame())
+    monkeypatch.setattr(controllers, "list_presets", lambda *_: [])
+
+    module = importlib.reload(importlib.import_module("views.api_configurazione"))
+    return module
 
 
 class DummySessionState(dict):
@@ -29,7 +41,7 @@ class DummySt:
         self.successes.append(msg)
 
 
-def test_start_new_preset_edit_initializes_session_state(monkeypatch):
+def test_start_new_preset_edit_initializes_session_state(monkeypatch, view):
     dummy = DummySt()
     monkeypatch.setattr(view, "st", dummy)
 
@@ -47,7 +59,7 @@ def test_start_new_preset_edit_initializes_session_state(monkeypatch):
     }
 
 
-def test_start_existing_preset_edit_initializes_session_state(monkeypatch, mocker):
+def test_start_existing_preset_edit_initializes_session_state(monkeypatch, mocker, view):
     dummy = DummySt()
     dummy.session_state.api_presets = object()
     monkeypatch.setattr(view, "st", dummy)
@@ -76,7 +88,7 @@ def test_start_existing_preset_edit_initializes_session_state(monkeypatch, mocke
     assert dummy.errors == []
 
 
-def test_save_preset_from_form_validation_error(monkeypatch, mocker):
+def test_save_preset_from_form_validation_error(monkeypatch, mocker, view):
     dummy = DummySt()
     dummy.session_state.preset_form_data = {}
     dummy.session_state.current_preset_edit_id = None
@@ -90,7 +102,7 @@ def test_save_preset_from_form_validation_error(monkeypatch, mocker):
     assert dummy.errors == ["err"]
 
 
-def test_save_preset_from_form_success(monkeypatch, mocker):
+def test_save_preset_from_form_success(monkeypatch, mocker, view):
     dummy = DummySt()
     dummy.session_state.update(
         {
@@ -122,7 +134,7 @@ def test_save_preset_from_form_success(monkeypatch, mocker):
     assert dummy.session_state.preset_form_data == {}
 
 
-def test_delete_preset_callback_clears_form_state(monkeypatch, mocker):
+def test_delete_preset_callback_clears_form_state(monkeypatch, mocker, view):
     dummy = DummySt()
     dummy.session_state.update(
         {

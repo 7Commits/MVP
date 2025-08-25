@@ -1,10 +1,48 @@
 import os
 import sys
+import importlib
 import pandas as pd
+import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from views import visualizza_risultati
+
+@pytest.fixture
+def visualizza_risultati(monkeypatch):
+    import controllers
+    import importlib.util
+    import json
+    from pathlib import Path
+
+    monkeypatch.setattr(
+        controllers,
+        "get_results",
+        lambda *_a, **_k: pd.DataFrame(
+            [{"id": 1, "set_id": 1, "timestamp": "t", "results": {}}]
+        ),
+    )
+    monkeypatch.setattr(
+        controllers, "load_sets", lambda: pd.DataFrame([{ "id": 1, "name": "s" }])
+    )
+    monkeypatch.setattr(controllers, "list_set_names", lambda *_a: ["s"])
+    monkeypatch.setattr(controllers, "list_model_names", lambda *_a: ["m"])
+    monkeypatch.setattr(
+        controllers, "prepare_select_options", lambda df, sets: {1: "r"}
+    )
+    monkeypatch.setattr(json, "dumps", lambda *a, **k: "{}")
+
+    base_path = Path(__file__).resolve().parents[1] / "views"
+    style_spec = importlib.util.spec_from_file_location("views.style_utils", base_path / "style_utils.py")
+    style_mod = importlib.util.module_from_spec(style_spec)
+    sys.modules["views.style_utils"] = style_mod
+    style_spec.loader.exec_module(style_mod)
+
+    module_path = base_path / "visualizza_risultati.py"
+    spec = importlib.util.spec_from_file_location("views.visualizza_risultati", module_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["views.visualizza_risultati"] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 class DummySessionState(dict):
@@ -77,7 +115,7 @@ class StopRender(Exception):
     pass
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch, visualizza_risultati):
     dummy_st = DummySt()
     monkeypatch.setattr(visualizza_risultati, "st", dummy_st)
     monkeypatch.setattr(visualizza_risultati, "add_page_header", lambda *a, **k: None)
@@ -109,8 +147,8 @@ def _setup(monkeypatch):
     return dummy_st
 
 
-def test_import_results_callback_success(monkeypatch):
-    dummy_st = _setup(monkeypatch)
+def test_import_results_callback_success(monkeypatch, visualizza_risultati):
+    dummy_st = _setup(monkeypatch, visualizza_risultati)
     callback = dummy_st.captured_callbacks.get("Importa Risultati")
     assert callback is not None
 
@@ -132,8 +170,8 @@ def test_import_results_callback_success(monkeypatch):
     assert isinstance(dummy_st.session_state.results, pd.DataFrame)
 
 
-def test_import_results_callback_error(monkeypatch):
-    dummy_st = _setup(monkeypatch)
+def test_import_results_callback_error(monkeypatch, visualizza_risultati):
+    dummy_st = _setup(monkeypatch, visualizza_risultati)
     callback = dummy_st.captured_callbacks.get("Importa Risultati")
     assert callback is not None
 

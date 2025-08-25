@@ -25,16 +25,16 @@ def test_add_global_styles_injects_css(monkeypatch):
 def test_add_page_header_calls_global_styles_and_renders(monkeypatch):
     dummy_st = DummySt()
     monkeypatch.setattr(style_utils, 'st', dummy_st)
-    called = {'global': False}
+    called = {'css': False}
 
-    def fake_add_global_styles():
-        called['global'] = True
+    def fake_load_css():
+        called['css'] = True
 
-    monkeypatch.setattr(style_utils, 'add_global_styles', fake_add_global_styles)
+    monkeypatch.setattr(style_utils, 'load_css', fake_load_css)
 
     style_utils.add_page_header('Titolo', icon='✨', description='desc')
 
-    assert called['global'] is True
+    assert called['css'] is True
     assert any('✨ Titolo' in c and 'desc' in c for c in dummy_st.calls)
 
 
