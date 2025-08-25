@@ -1,0 +1,245 @@
+/* ===========================
+   LAYOUT GENERALE
+=========================== */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* ===========================
+   MENU
+=========================== */
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] span {
+    font-size: 20px !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] svg {
+    width: 1.5em !important;
+    height: 1.5em !important;
+}
+
+/* ===========================
+   INPUTS E SELETTORI
+=========================== */
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"],
+.stMultiselect div[data-baseweb="select"] {
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {
+    box-shadow: 0 0 0 3px rgba(79, 106, 240, 0.2) !important;
+}
+.stMultiselect span[data-baseweb="tag"] {
+    max-width: 100%;
+    white-space: normal !important;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+}
+div[data-baseweb="select"] * {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+    word-break: break-word;
+}
+
+/* ===========================
+   BOTTONI
+=========================== */
+.stButton > button {
+    background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
+}
+.stButton > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.stFormSubmitButton > button {
+    background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
+}
+.stFormSubmitButton > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.st-emotion-cache-15yv26i > button {
+   background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important; 
+}
+.st-emotion-cache-15yv26i > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ===========================
+   CHECKBOX & RADIO
+=========================== */
+.stCheckbox label,
+.stRadio label {
+    font-weight: 400 !important;
+}
+.stCheckbox > div[role="radiogroup"] > label > div:first-child,
+.stRadio > div[role="radiogroup"] > label > div:first-child {
+    border-color: #C0C9F1;
+}
+
+/* ===========================
+   TABS
+=========================== */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.5rem;
+}
+.stTabs [data-baseweb="tab"] {
+     background-color: #EAEEFF !important;
+    color: #333333 !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 0.5rem 1rem !important;
+    border-bottom: none !important;
+}
+.stTabs [aria-selected="true"] {
+    font-weight: 600 !important;
+    border-top: 2px solid #4F6AF0 !important;
+}
+
+/* ===========================
+   CARD & SEZIONI
+=========================== */
+.shadow-card {
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.page-header {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(79, 106, 240, 0.1);
+    border-left: 5px solid #4F6AF0;
+}
+.page-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+.page-description {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+hr.header-divider {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, #4F6AF0, rgba(79, 106, 240, 0.1));
+}
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(79, 106, 240, 0.2);
+}
+
+/* ===========================
+   FEATURE BOXES
+=========================== */
+.feature-box {
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-top: 4px solid #4F6AF0;
+    box-shadow: 0 6px 18px rgba(79, 106, 240, 0.1);
+    transition: all 0.3s ease;
+}
+.feature-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(79, 106, 240, 0.15);
+}
+.feature-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+.feature-description {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+.icon-large {
+    font-size: 2rem;
+    margin-right: 0.75rem;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    text-align: center;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(79, 106, 240, 0.1);
+}
+
+/* ===========================
+   WELCOME SECTION
+=========================== */
+.welcome-section {
+    margin-bottom: 2.5rem;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid #4F6AF0;
+    background-color: --backgroundColor !important;
+}
+.welcome-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+.subtitle {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+.getting-started {
+    padding: 2rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    border-left: 5px solid #4F6AF0;
+}
+.getting-started h3 {
+    margin-bottom: 1rem;
+}
+.getting-started ol {
+    padding-left: 1.5rem;
+}
+.getting-started li {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+

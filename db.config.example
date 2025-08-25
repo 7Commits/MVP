@@ -1,0 +1,14 @@
+[mysql]
+host=localhost
+user=root
+password=your_password_here
+database=llm_platform
+port=3306
+ssl_ca=
+
+# Per l'ambiente Docker, utilizzare:
+# host=db
+# user=root
+# password=
+# database=llm_platform
+# port=3306

@@ -1,0 +1,5 @@
+name,id,domanda,risposta_attesa,categoria
+Set1,q1,Existing question?,Answer1,cat1
+Set2,q1,,, 
+Set2,q2,New question?,Answer2,cat2
+Set2,,No ID question?,No ID answer,cat3
