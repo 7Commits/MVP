@@ -72,7 +72,7 @@ def import_questions_callback():
         state.import_error = True
         state.import_error_message = str(e)
     st.session_state.question_page_state = state
-    st.session_state.upload_questions_file = None
+    st.session_state.pop("upload_questions_file", None)
     st.session_state.uploaded_file_content = None
 
 

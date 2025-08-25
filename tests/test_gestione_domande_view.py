@@ -118,7 +118,7 @@ def test_import_questions_callback_success(monkeypatch):
     assert state.import_success is True
     assert "2" in state.import_success_message
     assert dummy_st.session_state.upload_questions_file is None
-    assert dummy_st.session_state.uploaded_file_content is None
+    assert "upload_questions_file" not in dummy_st.session_state
     assert isinstance(dummy_st.session_state.questions, pd.DataFrame)
 
 
@@ -138,7 +138,7 @@ def test_import_questions_callback_error(monkeypatch):
     state: QuestionPageState = dummy_st.session_state.question_page_state
     assert state.import_error is True
     assert state.import_error_message == "bad"
-    assert dummy_st.session_state.upload_questions_file is None
+    assert "upload_questions_file" not in dummy_st.session_state
     assert dummy_st.session_state.uploaded_file_content is None
 
 
