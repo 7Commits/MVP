@@ -169,7 +169,7 @@ def render():
                 for idx, row in filtered_questions_df.iterrows():
                     category_display = row.get('categoria', 'N/A') if pd.notna(row.get('categoria')) else 'N/A'
                     with st.expander(
-                        f"Domanda: {row['domanda'][:100]}... (Categoria: {category_display})"
+                        f"{row['domanda'][:100]}... (Categoria: {category_display})"
                     ):
                         col1, col2 = st.columns([3, 1])
 
