@@ -63,6 +63,7 @@ def test_app_page_config_and_navigation(monkeypatch):
 
     style_utils_mod = types.ModuleType("views.style_utils")
     style_utils_mod.add_global_styles = lambda: None
+    style_utils_mod.load_css = lambda: None
     sys.modules["views.style_utils"] = style_utils_mod
 
     sys.modules["views"] = views_pkg
