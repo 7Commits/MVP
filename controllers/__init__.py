@@ -2,6 +2,7 @@
 
 # Gestione dei preset API
 import logging
+from .startup_controller import get_initial_state
 
 from .api_preset_controller import (
     load_presets,
@@ -65,7 +66,6 @@ from models.test_result import TestResult
 calculate_statistics = TestResult.calculate_statistics
 
 # Funzioni di avvio
-from .startup_controller import get_initial_state
 logger = logging.getLogger(__name__)
 
 

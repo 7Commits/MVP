@@ -1,15 +1,20 @@
 /* ===========================
-   STILI GENERALI LAYOUT
+   LAYOUT GENERALE
 =========================== */
 .main .block-container {
     padding-top: 2rem;
     padding-bottom: 2rem;
 }
-.main {
-    background-color: #FAFBFF;
+
+/* ===========================
+   MENU
+=========================== */
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] span {
+    font-size: 20px !important;
 }
-.sidebar .sidebar-content {
-    background-color: #F0F4FF;
+section[data-testid="stSidebar"] div[data-testid="stSidebarNav"] svg {
+    width: 1.5em !important;
+    height: 1.5em !important;
 }
 
 /* ===========================
@@ -21,8 +26,6 @@
 .stSelectbox div[data-baseweb="select"],
 .stMultiselect div[data-baseweb="select"] {
     border-radius: 8px !important;
-    border: 1px solid #E0E5FF !important;
-    background-color: white !important;
     transition: all 0.3s ease !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -30,13 +33,7 @@
 .stTextInput input:focus,
 .stNumberInput input:focus,
 .stTextArea textarea:focus {
-    border-color: #4F6AF0 !important;
     box-shadow: 0 0 0 3px rgba(79, 106, 240, 0.2) !important;
-}
-.stSelectbox,
-.stMultiselect {
-    border-radius: 8px !important;
-    width: 100% !important;
 }
 .stMultiselect span[data-baseweb="tag"] {
     max-width: 100%;
@@ -44,20 +41,9 @@
     flex-wrap: wrap;
     overflow-wrap: anywhere;
 }
-.stMultiselect span[data-baseweb="tag"] span {
-    white-space: normal !important;
-    word-break: break-word;
-}
-.stMultiselect .st-gz {
-    max-width: none !important;
-}
-/* Consenti testo a capo nei menu */
 div[data-baseweb="select"] * {
     max-width: 100%;
     overflow-wrap: anywhere;
-    word-break: normal;
-}
-div[data-baseweb="menu"] * {
     white-space: normal !important;
     word-break: break-word;
 }
@@ -66,17 +52,44 @@ div[data-baseweb="menu"] * {
    BOTTONI
 =========================== */
 .stButton > button {
-    border-radius: 8px !important;
-    border: 1px solid #4F6AF0 !important;
-    background-color: #4F6AF0 !important;
+    background-color: #4fbdf0 !important;
     color: white !important;
+    border-radius: 8px !important;
     font-weight: 600 !important;
     padding: 0.5rem 1rem !important;
     transition: all 0.3s ease !important;
     box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
 }
 .stButton > button:hover {
-    background-color: #3A56E0 !important;
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.stFormSubmitButton > button {
+    background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important;
+}
+.stFormSubmitButton > button:hover {
+    background-color: #3a9ee0 !important;
+    box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+.st-emotion-cache-15yv26i > button {
+   background-color: #4fbdf0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(79, 106, 240, 0.2) !important; 
+}
+.st-emotion-cache-15yv26i > button:hover {
+    background-color: #3a9ee0 !important;
     box-shadow: 0 3px 10px rgba(79, 106, 240, 0.4) !important;
     transform: translateY(-1px) !important;
 }
@@ -87,7 +100,6 @@ div[data-baseweb="menu"] * {
 .stCheckbox label,
 .stRadio label {
     font-weight: 400 !important;
-    color: #333333 !important;
 }
 .stCheckbox > div[role="radiogroup"] > label > div:first-child,
 .stRadio > div[role="radiogroup"] > label > div:first-child {
@@ -101,16 +113,13 @@ div[data-baseweb="menu"] * {
     gap: 0.5rem;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 8px 8px 0 0 !important;
-    background-color: #EAEEFF !important;
+     background-color: #EAEEFF !important;
     color: #333333 !important;
+    border-radius: 8px 8px 0 0 !important;
     padding: 0.5rem 1rem !important;
-    border: 1px solid #E0E5FF !important;
     border-bottom: none !important;
 }
 .stTabs [aria-selected="true"] {
-    background-color: white !important;
-    color: #4F6AF0 !important;
     font-weight: 600 !important;
     border-top: 2px solid #4F6AF0 !important;
 }
@@ -120,14 +129,12 @@ div[data-baseweb="menu"] * {
 =========================== */
 .shadow-card {
     border-radius: 10px;
-    background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 .page-header {
     margin-bottom: 1.5rem;
-    background-color: white;
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(79, 106, 240, 0.1);
@@ -136,12 +143,10 @@ div[data-baseweb="menu"] * {
 .page-title {
     font-size: 2rem;
     font-weight: bold;
-    color: #4F6AF0;
     margin-bottom: 0.5rem;
 }
 .page-description {
     font-size: 1.1rem;
-    color: #666;
     margin-bottom: 0.5rem;
 }
 hr.header-divider {
@@ -156,7 +161,6 @@ hr.header-divider {
     font-weight: 600;
     margin-top: 1.5rem;
     margin-bottom: 1rem;
-    color: #4F6AF0;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid rgba(79, 106, 240, 0.2);
 }
@@ -165,7 +169,6 @@ hr.header-divider {
    FEATURE BOXES
 =========================== */
 .feature-box {
-    background-color: white;
     border-radius: 12px;
     padding: 25px;
     margin-bottom: 25px;
@@ -181,19 +184,16 @@ hr.header-divider {
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 15px;
-    color: #333;
     display: flex;
     align-items: center;
 }
 .feature-description {
     font-size: 1rem;
-    color: #555;
     line-height: 1.5;
 }
 .icon-large {
     font-size: 2rem;
     margin-right: 0.75rem;
-    background: linear-gradient(135deg, #F0F4FF, #E6EBFF);
     width: 50px;
     height: 50px;
     line-height: 50px;
@@ -207,26 +207,23 @@ hr.header-divider {
 =========================== */
 .welcome-section {
     margin-bottom: 2.5rem;
-    background-color: white;
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     border-left: 5px solid #4F6AF0;
+    background-color: --backgroundColor !important;
 }
 .welcome-title {
     font-size: 2.2rem;
     font-weight: bold;
-    color: #4F6AF0;
     margin-bottom: 1rem;
 }
 .subtitle {
     font-size: 1.3rem;
-    color: #555;
     line-height: 1.6;
     margin-bottom: 1.5rem;
 }
 .getting-started {
-    background: white;
     padding: 2rem;
     border-radius: 12px;
     margin-top: 2rem;
@@ -235,7 +232,6 @@ hr.header-divider {
     border-left: 5px solid #4F6AF0;
 }
 .getting-started h3 {
-    color: #4F6AF0;
     margin-bottom: 1rem;
 }
 .getting-started ol {
@@ -246,74 +242,4 @@ hr.header-divider {
     line-height: 1.6;
 }
 
-/* ===========================
-   TEMA SCURO
-=========================== */
-[data-theme="dark"] div[data-testid="stTextInput"] input,
-.streamlit-dark div[data-testid="stTextInput"] input,
-[data-theme="dark"] div[data-baseweb="input"] input,
-.streamlit-dark div[data-baseweb="input"] input,
-[data-theme="dark"] div[data-testid="stTextArea"] textarea,
-.streamlit-dark div[data-testid="stTextArea"] textarea,
-[data-theme="dark"] div[data-baseweb="textarea"] textarea,
-.streamlit-dark div[data-baseweb="textarea"] textarea,
-[data-theme="dark"] div[data-testid="stNumberInput"] input,
-.streamlit-dark div[data-testid="stNumberInput"] input {
-    color: #000 !important;
-    background-color: #FFF !important;
-    border: 1px solid #AAA !important;
-}
-[data-theme="dark"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-.streamlit-dark div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    color: #000 !important;
-    background-color: #FFF !important;
-    border: 1px solid #AAA !important;
-}
-[data-theme="dark"] div[data-testid="stSelectbox"] svg,
-.streamlit-dark div[data-testid="stSelectbox"] svg {
-    fill: #000 !important;
-}
 
-/* ===========================
-   TEMA CHIARO
-=========================== */
-[data-theme="light"] div[data-testid="stTextInput"] input,
-.streamlit-light div[data-testid="stTextInput"] input,
-[data-theme="light"] div[data-baseweb="input"] input,
-.streamlit-light div[data-baseweb="input"] input,
-[data-theme="light"] div[data-testid="stTextArea"] textarea,
-.streamlit-light div[data-testid="stTextArea"] textarea,
-[data-theme="light"] div[data-baseweb="textarea"] textarea,
-.streamlit-light div[data-baseweb="textarea"] textarea,
-[data-theme="light"] div[data-testid="stNumberInput"] input,
-.streamlit-light div[data-testid="stNumberInput"] input {
-    color: #000 !important;
-    background-color: #FFF !important;
-    border: 1px solid #E0E0E0 !important;
-}
-[data-theme="light"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-.streamlit-light div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    color: #000 !important;
-    background-color: #FFF !important;
-    border: 1px solid #E0E0E0 !important;
-}
-[data-theme="light"] div[data-testid="stSelectbox"] svg,
-.streamlit-light div[data-testid="stSelectbox"] svg {
-    fill: #000 !important;
-}
-
-/* ===========================
-   STILI FINALI (BORDI INPUT)
-=========================== */
-div[data-testid="stTextInput"] input,
-div[data-baseweb="input"] input,
-div[data-testid="stTextArea"] textarea,
-div[data-baseweb="textarea"] textarea,
-div[data-testid="stNumberInput"] input,
-div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    border-radius: 4px !important;
-}
-/* Mostra interamente il testo selezionato */
-div[data-baseweb="select"] * {
-    white-space: normal !important;
-}

@@ -7,6 +7,7 @@ from models.question_set import QuestionSet
 from models.test_result import TestResult
 logger = logging.getLogger(__name__)
 
+
 def get_questions() -> List[Question]:
     return Question.load_all()
 

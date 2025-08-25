@@ -15,12 +15,12 @@ from controllers import (
     list_model_names,
     prepare_select_options,
 )
-from views import register_page
+# from views import register_page
 from views.style_utils import add_page_header, add_section_title
 logger = logging.getLogger(__name__)
 
 
-@register_page("Visualizzazione Risultati")
+# @register_page("Visualizzazione Risultati")
 def render():
     add_page_header(
         "Visualizzazione Risultati Test",
@@ -358,8 +358,6 @@ def render():
                 st.markdown(f"**Risposta Attesa:** {expected_answer}")
                 st.markdown(f"**Risposta Generata/Effettiva:** {actual_answer}")
                 st.divider()
-
-
                 evaluation = q_data.get(
                     'evaluation', {}
                 )  # Assicurati che evaluation sia sempre un dizionario
@@ -386,5 +384,10 @@ def render():
                     "Completezza", f"{completeness:.2f}%"
                 )
 
-
                 st.markdown("--- --- ---")
+
+
+if __name__ == "__main__":
+    render()
+else:
+    render()
