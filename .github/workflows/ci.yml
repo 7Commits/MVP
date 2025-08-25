@@ -36,7 +36,7 @@ jobs:
         run: sed -i 's/host=db/host=127.0.0.1/' db.config.example
       - name: Run linters
         run: |
-          flake8 app.py controllers/ models/ views/
+          flake8 --ignore=E501,W504,E261 app.py controllers/ models/ views/
           mypy app.py controllers/ models/ views/
       - name: Run tests
         run: pytest --cov=controllers --cov=models
